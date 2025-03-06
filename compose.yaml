@@ -1,0 +1,6 @@
+﻿services:
+  komunalka.api:
+    image: komunalka.api
+    build:
+      context: .
+      dockerfile: Komunalka.API/Dockerfile
