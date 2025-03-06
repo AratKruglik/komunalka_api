@@ -1,4 +1,4 @@
-namespace Komunalka.API;
+namespace KomunalkaAPI;
 
 public class WeatherForecast
 {

@@ -80,11 +80,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/oleksii/Projects/Komunalka/Komunalka/Komunalka.API/Komunalka.API.csproj",
-      "projectName": "Komunalka.API",
-      "projectPath": "/Users/oleksii/Projects/Komunalka/Komunalka/Komunalka.API/Komunalka.API.csproj",
+      "projectUniqueName": "/Users/oleksii/Projects/Komunalka/Komunalka/KomunalkaAPI/KomunalkaAPI.csproj",
+      "projectName": "KomunalkaAPI",
+      "projectPath": "/Users/oleksii/Projects/Komunalka/Komunalka/KomunalkaAPI/KomunalkaAPI.csproj",
       "packagesPath": "/Users/oleksii/.nuget/packages/",
-      "outputPath": "/Users/oleksii/Projects/Komunalka/Komunalka/Komunalka.API/obj/",
+      "outputPath": "/Users/oleksii/Projects/Komunalka/Komunalka/KomunalkaAPI/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/oleksii/.nuget/NuGet/NuGet.Config"

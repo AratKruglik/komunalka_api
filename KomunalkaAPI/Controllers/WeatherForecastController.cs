@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Komunalka.API.Controllers;
+namespace KomunalkaAPI.Controllers;
 
 [ApiController]
 [Route("[controller]")]
