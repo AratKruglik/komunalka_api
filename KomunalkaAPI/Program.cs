@@ -16,12 +16,10 @@ builder.Configuration
 
 // DB context connection
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    {
-        var connectionString =
-            $"Host={Env.GetString("DB_HOST")};Database={Env.GetString("DB_NAME")};Username={Env.GetString("DB_USER")};Password={Env.GetString("DB_PASS")}";
-        options.UseNpgsql(connectionString);
-    }
-);
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+
 
 // Add services to the container.
 
