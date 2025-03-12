@@ -318,7 +318,7 @@ namespace KomunalkaAPI.Migrations
                         .HasForeignKey("ServiceCategoryId");
 
                     b.HasOne("KomunalkaAPI.Models.User", "User")
-                        .WithMany("Addresses")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -416,11 +416,6 @@ namespace KomunalkaAPI.Migrations
                 });
 
             modelBuilder.Entity("KomunalkaAPI.Models.ServiceCategory", b =>
-                {
-                    b.Navigation("Addresses");
-                });
-
-            modelBuilder.Entity("KomunalkaAPI.Models.User", b =>
                 {
                     b.Navigation("Addresses");
                 });

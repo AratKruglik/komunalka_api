@@ -1,7 +1,11 @@
-@KomunalkaAPI_HostAddress = http://localhost:5242
-@Komunalka = variable value
+@KomunalkaAPI_HostAddress = http://localhost:5242/api
 
-GET {{KomunalkaAPI_HostAddress}}/weatherforecast/
+GET {{KomunalkaAPI_HostAddress}}/users
+Accept: application/json
+
+###
+
+GET {{KomunalkaAPI_HostAddress}}/users/1
 Accept: application/json
 
 ###
