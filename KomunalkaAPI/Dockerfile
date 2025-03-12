@@ -7,17 +7,17 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Komunalka.API/Komunalka.API.csproj", "Komunalka.API/"]
-RUN dotnet restore "Komunalka.API/Komunalka.API.csproj"
+COPY ["KomunalkaAPI/KomunalkaAPI.csproj", "KomunalkaAPI/"]
+RUN dotnet restore "KomunalkaAPI/KomunalkaAPI.csproj"
 COPY . .
-WORKDIR "/src/Komunalka.API"
-RUN dotnet build "Komunalka.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/KomunalkaAPI"
+RUN dotnet build "KomunalkaAPI.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "Komunalka.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "KomunalkaAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Komunalka.API.dll"]
+ENTRYPOINT ["dotnet", "KomunalkaAPI.dll"]
