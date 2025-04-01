@@ -26,6 +26,18 @@ public class UsersController(IUnitOfWork unitOfWork) : ControllerBase
             Id = user.Id,
             Username = user.Username,
             Email = user.Email,
+            Addresses = user.Addresses?.Select(address => new AddressDto
+            {
+                Id = address.Id,
+                UserId = address.UserId,
+                ZipCode = address.ZipCode,
+                City = address.City ?? string.Empty,
+                Street = address.Street,
+                Building = address.Building ?? string.Empty,
+                CreatedAt = address.CreatedAt,
+                UpdatedAt = address.UpdatedAt,
+                DeletedAt = address.DeletedAt
+            }).ToList(),
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
         }).ToList();
@@ -49,6 +61,18 @@ public class UsersController(IUnitOfWork unitOfWork) : ControllerBase
             Id = user.Id,
             Username = user.Username,
             Email = user.Email,
+            Addresses = user.Addresses?.Select(address => new AddressDto
+            {
+                Id = address.Id,
+                UserId = address.UserId,
+                ZipCode = address.ZipCode,
+                City = address.City ?? string.Empty,
+                Street = address.Street,
+                Building = address.Building ?? string.Empty,
+                CreatedAt = address.CreatedAt,
+                UpdatedAt = address.UpdatedAt,
+                DeletedAt = address.DeletedAt
+            }).ToList(),
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
         };

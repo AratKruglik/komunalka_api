@@ -9,3 +9,13 @@ GET {{KomunalkaAPI_HostAddress}}/users/1
 Accept: application/json
 
 ###
+
+GET {{KomunalkaAPI_HostAddress}}/address
+Accept: application/json
+
+###
+
+GET {{KomunalkaAPI_HostAddress}}/address/1
+Accept: application/json
+
+###
