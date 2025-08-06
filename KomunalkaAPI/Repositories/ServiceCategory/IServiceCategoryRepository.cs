@@ -4,11 +4,11 @@ namespace KomunalkaAPI.Repositories.ServiceCategory;
 
 using Models;
 
-public interface IServiceCategoryRepository
+public interface IServiceCategoryRepository : IRepository<ServiceCategory>
 {
-    public new Task<IEnumerable<ServiceCategory>> GetAllAsync();
-    public new Task<ServiceCategory?> GetByIdAsync(int id);
-    public new ValueTask<EntityEntry<ServiceCategory>> AddAsync(ServiceCategory serviceCategory);
-    public new void Update(ServiceCategory serviceCategory);
-    public new void Delete(ServiceCategory serviceCategory);
+    Task<IEnumerable<ServiceCategory>> GetAllAsync();
+    Task<ServiceCategory?> GetByIdAsync(int id);
+    ValueTask<EntityEntry<ServiceCategory>> AddAsync(ServiceCategory serviceCategory);
+    void Update(ServiceCategory serviceCategory);
+    void Delete(ServiceCategory serviceCategory);
 }

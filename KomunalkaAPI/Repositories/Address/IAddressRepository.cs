@@ -4,12 +4,12 @@ namespace KomunalkaAPI.Repositories.Address;
 
 using Models;
 
-public interface IAddressRepository
+public interface IAddressRepository : IRepository<Address>
 {
-    public new Task<IEnumerable<Address>> GetAllAsync();
-    public new Task<Address?> GetByIdAsync(int id);
-    public new Task<IEnumerable<Address>> GetWithDeletedAsync();
-    public new Task<EntityEntry<Address>> AddAsync(Address address);
-    public new void Update(Address address);
-    public new void Delete(Address address);
+    Task<IEnumerable<Address>> GetAllAsync();
+    Task<Address?> GetByIdAsync(int id);
+    Task<IEnumerable<Address>> GetWithDeletedAsync();
+    Task<EntityEntry<Address>> AddAsync(Address address);
+    void Update(Address address);
+    void Delete(Address address);
 }

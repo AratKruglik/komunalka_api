@@ -7,7 +7,7 @@ using Models;
 
 public class AddressRepository(DbContext context) : Repository<Address>(context), IAddressRepository
 {
-    public new async Task<IEnumerable<Address>> GetAllAsync()
+    public override async Task<IEnumerable<Address>> GetAllAsync()
     {
         return await _dbSet
             .Include(a => a.User)
@@ -15,7 +15,7 @@ public class AddressRepository(DbContext context) : Repository<Address>(context)
             .ToListAsync();
     }
 
-    public new async Task<Address?> GetByIdAsync(int id)
+    public override async Task<Address?> GetByIdAsync(int id)
     {
         return await _dbSet
             .Include(a => a.User)
@@ -23,24 +23,24 @@ public class AddressRepository(DbContext context) : Repository<Address>(context)
             .FirstOrDefaultAsync(address => address.Id == id);
     }
     
-    public new async Task<IEnumerable<Address>> GetWithDeletedAsync()
+    public async Task<IEnumerable<Address>> GetWithDeletedAsync()
     {
         return await _dbSet
             .Include(a => a.User)
             .ToListAsync();
     }
 
-    public new async Task<EntityEntry<Address>> AddAsync(Address address)
+    public override async Task<EntityEntry<Address>> AddAsync(Address address)
     {
         return await _dbSet.AddAsync(address);
     }
 
-    public new void Update(Address address)
+    public override void Update(Address address)
     {
         _dbSet.Update(address);
     }
 
-    public new void Delete(Address address)
+    public override void Delete(Address address)
     {
         _dbSet.Remove(address);
     }

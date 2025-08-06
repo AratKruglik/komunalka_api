@@ -2,7 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace KomunalkaAPI.Models;
 
-public class Currency
+public class 
+    Currency
 {
     [Key]
     public int Id { get; set; }
