@@ -16,7 +16,7 @@ public class JwtService : IJwtService
         _configuration = configuration;
     }
 
-    public string GenerateJwtToken(User user)
+    public string GenerateJwtToken(User? user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_configuration["JWT:Secret"] ?? throw new InvalidOperationException("JWT:Secret not configured"));
@@ -43,7 +43,7 @@ public class JwtService : IJwtService
         return tokenHandler.WriteToken(token);
     }
 
-    public RefreshToken GenerateRefreshToken(User user)
+    public RefreshToken GenerateRefreshToken(User? user)
     {
         var randomNumber = new byte[32];
         using var rng = RandomNumberGenerator.Create();

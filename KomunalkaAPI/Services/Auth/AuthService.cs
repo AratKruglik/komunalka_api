@@ -8,24 +8,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KomunalkaAPI.Services.Auth;
 
-public class AuthService : IAuthService
+public class AuthService(
+    IUnitOfWork unitOfWork,
+    IUserRepository userRepository,
+    IJwtService jwtService,
+    ApplicationDbContext dbContext)
+    : IAuthService
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IUserRepository _userRepository;
-    private readonly IJwtService _jwtService;
-    private readonly ApplicationDbContext _dbContext;
-
-    public AuthService(IUnitOfWork unitOfWork, IUserRepository userRepository, IJwtService jwtService, ApplicationDbContext dbContext)
-    {
-        _unitOfWork = unitOfWork;
-        _userRepository = userRepository;
-        _jwtService = jwtService;
-        _dbContext = dbContext;
-    }
-
     public async Task<AuthenticationResponse?> AuthenticateAsync(AuthenticationRequest request)
     {
-        var user = await _userRepository.GetByEmailAsync(request.Email);
+        var user = await userRepository.GetByEmailAsync(request.Email);
 
         if (user == null || !VerifyPassword(request.Password, user.Password))
         {
@@ -38,7 +30,7 @@ public class AuthService : IAuthService
     public async Task<AuthenticationResponse?> RegisterAsync(RegisterUserRequest request)
     {
         // Перевірка, чи існує користувач з таким email
-        var existingUser = await _userRepository.GetByEmailAsync(request.Email);
+        var existingUser = await userRepository.GetByEmailAsync(request.Email);
         if (existingUser != null)
         {
             return null;
@@ -53,34 +45,51 @@ public class AuthService : IAuthService
             Role = "User"
         };
 
-        await _userRepository.AddAsync(newUser);
-        await _unitOfWork.SaveChangesAsync();
+        await userRepository.AddAsync(newUser);
+        await unitOfWork.CompleteAsync();
 
         return await GenerateAuthenticationResponseAsync(newUser);
     }
 
     public async Task<AuthenticationResponse?> RefreshTokenAsync(string refreshToken)
     {
-        var storedToken = await _dbContext.RefreshTokens
-            .Include(rt => rt.User)
-            .FirstOrDefaultAsync(t => t.Token == refreshToken);
+        var storedToken = await GetValidRefreshTokenAsync(refreshToken);
 
-        if (storedToken == null || storedToken.IsUsed || storedToken.IsRevoked || storedToken.ExpiryDate < DateTime.UtcNow || storedToken.User == null)
+        if (storedToken == null)
         {
             return null;
         }
 
         // Позначаємо старий токен як використаний
         storedToken.IsUsed = true;
-        _dbContext.RefreshTokens.Update(storedToken);
+        dbContext.RefreshTokens.Update(storedToken);
+        await dbContext.SaveChangesAsync();
 
         // Генеруємо новий токен та відповідь
         return await GenerateAuthenticationResponseAsync(storedToken.User);
     }
 
+    private async Task<RefreshToken?> GetValidRefreshTokenAsync(string refreshToken)
+    {
+        var storedToken = await dbContext.RefreshTokens
+            .Include(rt => rt.User)
+            .FirstOrDefaultAsync(t => t.Token == refreshToken);
+
+        if (storedToken == null || 
+            storedToken.IsUsed || 
+            storedToken.IsRevoked || 
+            storedToken.ExpiryDate < DateTime.UtcNow || 
+            storedToken.User == null)
+        {
+            return null;
+        }
+
+        return storedToken;
+    }
+
     public async Task<bool> RevokeTokenAsync(string refreshToken)
     {
-        var storedToken = await _dbContext.RefreshTokens.FirstOrDefaultAsync(t => t.Token == refreshToken);
+        var storedToken = await dbContext.RefreshTokens.FirstOrDefaultAsync(t => t.Token == refreshToken);
 
         if (storedToken == null)
         {
@@ -88,15 +97,15 @@ public class AuthService : IAuthService
         }
 
         storedToken.IsRevoked = true;
-        _dbContext.RefreshTokens.Update(storedToken);
-        await _dbContext.SaveChangesAsync();
+        dbContext.RefreshTokens.Update(storedToken);
+        await dbContext.SaveChangesAsync();
 
         return true;
     }
 
     public async Task<bool> ValidateTokenAsync(string token)
     {
-        var principal = _jwtService.GetPrincipalFromExpiredToken(token);
+        var principal = jwtService.GetPrincipalFromExpiredToken(token);
         if (principal == null)
         {
             return false;
@@ -108,18 +117,18 @@ public class AuthService : IAuthService
             return false;
         }
 
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = await userRepository.GetByIdAsync(userId);
         return user != null;
     }
 
-    private async Task<AuthenticationResponse> GenerateAuthenticationResponseAsync(User user)
+    private async Task<AuthenticationResponse> GenerateAuthenticationResponseAsync(User? user)
     {
-        var token = _jwtService.GenerateJwtToken(user);
-        var refreshToken = _jwtService.GenerateRefreshToken(user);
+        var token = jwtService.GenerateJwtToken(user);
+        var refreshToken = jwtService.GenerateRefreshToken(user);
 
         // Зберігаємо токен оновлення в базі даних
-        await _dbContext.RefreshTokens.AddAsync(refreshToken);
-        await _dbContext.SaveChangesAsync();
+        await dbContext.RefreshTokens.AddAsync(refreshToken);
+        await dbContext.SaveChangesAsync();
 
         return new AuthenticationResponse
         {
@@ -129,7 +138,7 @@ public class AuthService : IAuthService
             Role = user.Role,
             Token = token,
             RefreshToken = refreshToken.Token,
-            Expiration = _jwtService.GetTokenExpirationTime(token)
+            Expiration = jwtService.GetTokenExpirationTime(token)
         };
     }
 
