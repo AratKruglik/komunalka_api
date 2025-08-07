@@ -12,7 +12,7 @@ public class User
     public required string Password { get; set; }
     [EmailAddress]
     public required string Email { get; set; }
+    public List<Address>? Addresses { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-    public List<Address> Addresses { get; set; }
 }
