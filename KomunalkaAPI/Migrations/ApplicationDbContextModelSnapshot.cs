@@ -30,11 +30,22 @@ namespace KomunalkaAPI.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Building")
-                        .HasColumnType("text");
+                    b.Property<int>("AddressTypeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ApartmentNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("BuildingNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("City")
-                        .HasColumnType("text");
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -42,11 +53,23 @@ namespace KomunalkaAPI.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("RegionId")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("ServiceCategoryId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Street")
-                        .HasColumnType("text");
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -54,16 +77,54 @@ namespace KomunalkaAPI.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("ZipCode")
-                        .HasColumnType("integer");
+                    b.Property<string>("ZipCode")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AddressTypeId");
+
+                    b.HasIndex("RegionId");
 
                     b.HasIndex("ServiceCategoryId");
 
                     b.HasIndex("UserId");
 
                     b.ToTable("Addresses");
+                });
+
+            modelBuilder.Entity("KomunalkaAPI.Models.AddressType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AddressTypes");
                 });
 
             modelBuilder.Entity("KomunalkaAPI.Models.AddressesServiceCategory", b =>
@@ -154,6 +215,30 @@ namespace KomunalkaAPI.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("KomunalkaAPI.Models.Region", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Regions");
                 });
 
             modelBuilder.Entity("KomunalkaAPI.Models.ServiceCategory", b =>
@@ -349,6 +434,18 @@ namespace KomunalkaAPI.Migrations
 
             modelBuilder.Entity("KomunalkaAPI.Models.Address", b =>
                 {
+                    b.HasOne("KomunalkaAPI.Models.AddressType", "AddressType")
+                        .WithMany("Addresses")
+                        .HasForeignKey("AddressTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("KomunalkaAPI.Models.Region", "Region")
+                        .WithMany("Addresses")
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("KomunalkaAPI.Models.ServiceCategory", null)
                         .WithMany("Addresses")
                         .HasForeignKey("ServiceCategoryId");
@@ -358,6 +455,10 @@ namespace KomunalkaAPI.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("AddressType");
+
+                    b.Navigation("Region");
 
                     b.Navigation("User");
                 });
@@ -460,6 +561,16 @@ namespace KomunalkaAPI.Migrations
                     b.Navigation("AddressesServiceCategories");
 
                     b.Navigation("ServiceCounters");
+                });
+
+            modelBuilder.Entity("KomunalkaAPI.Models.AddressType", b =>
+                {
+                    b.Navigation("Addresses");
+                });
+
+            modelBuilder.Entity("KomunalkaAPI.Models.Region", b =>
+                {
+                    b.Navigation("Addresses");
                 });
 
             modelBuilder.Entity("KomunalkaAPI.Models.ServiceCategory", b =>

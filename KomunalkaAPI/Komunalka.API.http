@@ -1,7 +1,7 @@
 @KomunalkaAPI_HostAddress = https://localhost:7095/api
 
 # JWT Token variables (update these after login)
-@jwt_token = your_jwt_token_here
+@jwt_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0KzNAZXhhbXBsZS5jb20iLCJqdGkiOiIyNDRmMWRmZS0wN2RmLTQ3YTMtYjMyYy0wZWM1Y2NiNjYxMTUiLCJ1bmlxdWVfbmFtZSI6InRlc3R1c2VyIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3NTQ1ODA0OTcsImV4cCI6MTc1NDU4MjI5NywiaWF0IjoxNzU0NTgwNDk3LCJpc3MiOiJrb211bmFsa2EtYXBpIiwiYXVkIjoia29tdW5hbGthLWNsaWVudCJ9.KoJrmQaZHnxamn-m4OC9Dapgt1mLLo15H6MjVbA_o70
 @refresh_token = your_refresh_token_here
 
 ### Authentication Endpoints
@@ -117,6 +117,25 @@ Authorization: Bearer {{jwt_token}}
 
 ###
 
+# Create new address (requires authentication)
+POST {{KomunalkaAPI_HostAddress}}/address
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "regionId": 9,
+  "city": "Київ",
+  "street": "вул. Хрещатик",
+  "buildingNumber": "1",
+  "apartmentNumber": "101",
+  "zipCode": "01001",
+  "notes": "Центр міста",
+  "isPrimary": true,
+  "addressTypeId": 1
+}
+
+###
+
 # Update address (requires authentication)
 PUT {{KomunalkaAPI_HostAddress}}/address/1
 Content-Type: application/json
@@ -124,16 +143,49 @@ Authorization: Bearer {{jwt_token}}
 
 {
   "userId": 1,
-  "zipCode": "12345",
-  "city": "Test City",
-  "street": "Test Street 123",
-  "building": "Building A"
+  "regionId": 9,
+    "zipCode": "01001",
+  "city": "Київ",
+  "street": "вул. Хрещатик",
+  "buildingNumber": "1",
+  "apartmentNumber": "101",
+  "notes": "Оновлені примітки",
+  "isPrimary": true,
+  "addressTypeId": 1
 }
 
 ###
 
 # Delete address (requires authentication)
 DELETE {{KomunalkaAPI_HostAddress}}/address/1
+Authorization: Bearer {{jwt_token}}
+
+### Region Management Endpoints
+
+# Get all regions (requires authentication)
+GET {{KomunalkaAPI_HostAddress}}/region
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# Get region by ID (requires authentication)
+GET {{KomunalkaAPI_HostAddress}}/region/9
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+### Address Type Management Endpoints
+
+# Get all address types (requires authentication)
+GET {{KomunalkaAPI_HostAddress}}/addresstype
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# Get address type by ID (requires authentication)
+GET {{KomunalkaAPI_HostAddress}}/addresstype/1
+Accept: application/json
 Authorization: Bearer {{jwt_token}}
 
 ### Currency Management Endpoints

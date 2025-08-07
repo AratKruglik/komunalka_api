@@ -127,4 +127,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Виконуємо сід даних
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await KomunalkaAPI.Data.SeedData.SeedAsync(context);
+}
+
 app.Run();
