@@ -105,6 +105,13 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+var httpPort = Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORT") ?? "5095";
+var httpsPort = Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT") ?? "7095";
+   
+app.Urls.Add($"http://localhost:{httpPort}");
+app.Urls.Add($"https://localhost:{httpsPort}");
+
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

@@ -1,4 +1,4 @@
-@KomunalkaAPI_HostAddress = http://localhost:5242/api
+@KomunalkaAPI_HostAddress = https://localhost:7095/api
 
 # JWT Token variables (update these after login)
 @jwt_token = your_jwt_token_here
@@ -12,7 +12,7 @@ Content-Type: application/json
 
 {
   "username": "testuser",
-  "email": "test+1@example.com",
+  "email": "test+3@example.com",
   "password": "password123",
   "confirmPassword": "password123"
 }
@@ -24,7 +24,7 @@ POST {{KomunalkaAPI_HostAddress}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "test@example.com",
+  "email": "test+3@example.com",
   "password": "password123"
 }
 
@@ -146,7 +146,7 @@ Authorization: Bearer {{jwt_token}}
 ###
 
 # Get currency by ID (requires authentication)
-GET {{KomunalkaAPI_HostAddress}}/currency/1
+GET {{KomunalkaAPI_HostAddress}}/currency/2
 Accept: application/json
 Authorization: Bearer {{jwt_token}}
 

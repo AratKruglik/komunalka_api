@@ -172,3 +172,5 @@
 /Users/oleksii/Projects/Komunalka/KomunalkaAPI/obj/Debug/net9.0/KomunalkaAPI.pdb
 /Users/oleksii/Projects/Komunalka/KomunalkaAPI/obj/Debug/net9.0/KomunalkaAPI.genruntimeconfig.cache
 /Users/oleksii/Projects/Komunalka/KomunalkaAPI/obj/Debug/net9.0/ref/KomunalkaAPI.dll
+/Users/oleksii/Projects/Komunalka/KomunalkaAPI/bin/Debug/net9.0/System.Formats.Asn1.dll
+/Users/oleksii/Projects/Komunalka/KomunalkaAPI/bin/Debug/net9.0/System.Text.Json.dll
