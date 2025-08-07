@@ -13,6 +13,8 @@ public class User
     [EmailAddress]
     public required string Email { get; set; }
     public List<Address>? Addresses { get; set; }
+    public string? Role { get; set; } = "User";
+    public List<RefreshToken>? RefreshTokens { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

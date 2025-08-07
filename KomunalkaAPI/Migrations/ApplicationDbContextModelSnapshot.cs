@@ -46,7 +46,6 @@ namespace KomunalkaAPI.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Street")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -318,7 +317,7 @@ namespace KomunalkaAPI.Migrations
                         .HasForeignKey("ServiceCategoryId");
 
                     b.HasOne("KomunalkaAPI.Models.User", "User")
-                        .WithMany()
+                        .WithMany("Addresses")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -416,6 +415,11 @@ namespace KomunalkaAPI.Migrations
                 });
 
             modelBuilder.Entity("KomunalkaAPI.Models.ServiceCategory", b =>
+                {
+                    b.Navigation("Addresses");
+                });
+
+            modelBuilder.Entity("KomunalkaAPI.Models.User", b =>
                 {
                     b.Navigation("Addresses");
                 });

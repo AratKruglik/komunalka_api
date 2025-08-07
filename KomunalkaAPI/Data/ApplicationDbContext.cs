@@ -15,3 +15,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Address> Addresses { get; set; }
     public DbSet<AddressesServiceCategory> AddressesServiceCategories { get; set; }
 }
+using KomunalkaAPI.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace KomunalkaAPI.Data;
