@@ -31,15 +31,19 @@ builder.Services.AddControllers()
     });
 
 // DB context connection
+var connectionString = $"Host={Environment.GetEnvironmentVariable("POSTGRES_HOST")};Port={Environment.GetEnvironmentVariable("POSTGRES_PORT")};Database={Environment.GetEnvironmentVariable("POSTGRES_DATABASE")};Username={Environment.GetEnvironmentVariable("POSTGRES_USERNAME")};Password={Environment.GetEnvironmentVariable("POSTGRES_PASSWORD")}";
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseNpgsql(connectionString);
 });
 builder.Services.AddScoped<DbContext, ApplicationDbContext>();
 
 // JWT Authentication
-var jwtSettings = builder.Configuration.GetSection("JWT");
-var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT:Secret not configured"));
+var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET not configured");
+var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? throw new InvalidOperationException("JWT_ISSUER not configured");
+var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? throw new InvalidOperationException("JWT_AUDIENCE not configured");
+var key = Encoding.ASCII.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -56,8 +60,8 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
         ClockSkew = TimeSpan.Zero
     };
 });

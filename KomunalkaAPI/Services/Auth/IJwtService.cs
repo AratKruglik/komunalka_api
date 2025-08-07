@@ -6,8 +6,8 @@ namespace KomunalkaAPI.Services.Auth;
 
 public interface IJwtService
 {
-    string GenerateJwtToken(User? user);
-    RefreshToken GenerateRefreshToken(User? user);
+    string GenerateJwtToken(User user);
+    RefreshToken GenerateRefreshToken(User user);
     ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
     DateTime GetTokenExpirationTime(string token);
 }

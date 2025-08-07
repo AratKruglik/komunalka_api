@@ -9,17 +9,25 @@ namespace KomunalkaAPI.Services.Auth;
 
 public class JwtService : IJwtService
 {
-    private readonly IConfiguration _configuration;
+    private readonly string _jwtSecret;
+    private readonly string _jwtIssuer;
+    private readonly string _jwtAudience;
+    private readonly int _jwtExpirationMinutes;
+    private readonly int _refreshTokenExpirationDays;
 
-    public JwtService(IConfiguration configuration)
+    public JwtService()
     {
-        _configuration = configuration;
+        _jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET not configured");
+        _jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? throw new InvalidOperationException("JWT_ISSUER not configured");
+        _jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? throw new InvalidOperationException("JWT_AUDIENCE not configured");
+        _jwtExpirationMinutes = int.Parse(Environment.GetEnvironmentVariable("JWT_EXPIRATION_MINUTES") ?? "30");
+        _refreshTokenExpirationDays = int.Parse(Environment.GetEnvironmentVariable("JWT_REFRESH_TOKEN_EXPIRATION_DAYS") ?? "7");
     }
 
-    public string GenerateJwtToken(User? user)
+    public string GenerateJwtToken(User user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_configuration["JWT:Secret"] ?? throw new InvalidOperationException("JWT:Secret not configured"));
+        var key = Encoding.ASCII.GetBytes(_jwtSecret);
 
         var claims = new List<Claim>
         {
@@ -33,17 +41,17 @@ public class JwtService : IJwtService
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(double.Parse(_configuration["JWT:ExpirationInMinutes"] ?? "30")),
+            Expires = DateTime.UtcNow.AddMinutes(_jwtExpirationMinutes),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-            Issuer = _configuration["JWT:Issuer"],
-            Audience = _configuration["JWT:Audience"]
+            Issuer = _jwtIssuer,
+            Audience = _jwtAudience
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
     }
 
-    public RefreshToken GenerateRefreshToken(User? user)
+    public RefreshToken GenerateRefreshToken(User user)
     {
         var randomNumber = new byte[32];
         using var rng = RandomNumberGenerator.Create();
@@ -53,7 +61,7 @@ public class JwtService : IJwtService
         {
             Token = Convert.ToBase64String(randomNumber),
             UserId = user.Id,
-            ExpiryDate = DateTime.UtcNow.AddDays(double.Parse(_configuration["JWT:RefreshTokenExpirationInDays"] ?? "7")),
+            ExpiryDate = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays),
             IsUsed = false,
             IsRevoked = false
         };
@@ -67,9 +75,9 @@ public class JwtService : IJwtService
             ValidateAudience = true,
             ValidateLifetime = false, // Don't validate the lifetime as we're dealing with an expired token
             ValidateIssuerSigningKey = true,
-            ValidIssuer = _configuration["JWT:Issuer"],
-            ValidAudience = _configuration["JWT:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_configuration["JWT:Secret"] ?? throw new InvalidOperationException("JWT:Secret not configured")))
+            ValidIssuer = _jwtIssuer,
+            ValidAudience = _jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(_jwtSecret))
         };
 
         var tokenHandler = new JwtSecurityTokenHandler();

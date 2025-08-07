@@ -66,6 +66,11 @@ public class AuthService(
         await dbContext.SaveChangesAsync();
 
         // Генеруємо новий токен та відповідь
+        if (storedToken.User == null)
+        {
+            return null;
+        }
+        
         return await GenerateAuthenticationResponseAsync(storedToken.User);
     }
 
@@ -121,7 +126,7 @@ public class AuthService(
         return user != null;
     }
 
-    private async Task<AuthenticationResponse> GenerateAuthenticationResponseAsync(User? user)
+    private async Task<AuthenticationResponse> GenerateAuthenticationResponseAsync(User user)
     {
         var token = jwtService.GenerateJwtToken(user);
         var refreshToken = jwtService.GenerateRefreshToken(user);

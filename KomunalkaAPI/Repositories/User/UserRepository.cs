@@ -28,7 +28,7 @@ public class UserRepository(DbContext context) : Repository<User>(context), IUse
             .FirstOrDefaultAsync(user => user.Email == email);
     }
     
-    public new async Task<EntityEntry<User?>> AddAsync(User? user)
+    public new async Task<EntityEntry<User>> AddAsync(User user)
     {
         return await _dbSet
             .AddAsync(user);
