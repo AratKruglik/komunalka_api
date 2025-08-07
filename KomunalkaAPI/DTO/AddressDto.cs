@@ -11,7 +11,7 @@ public class AddressDto
     public required string Street { get; set; }
     public required string BuildingNumber { get; set; }
     public string? ApartmentNumber { get; set; }
-    public string ZipCode { get; set; }
+    public required string ZipCode { get; set; }
     public string? Notes { get; set; }
     public bool IsPrimary { get; set; }
     public int AddressTypeId { get; set; }

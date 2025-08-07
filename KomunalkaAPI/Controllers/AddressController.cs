@@ -15,12 +15,20 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
     [HttpGet(Name = "addresses")]
     public async Task<ActionResult<IEnumerable<AddressDto>>> GetAll()
     {
+        // Отримуємо ID поточного користувача з JWT токена
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized("Невійсний токен користувача");
+        }
+
         var addresses = await unitOfWork.Addresses.GetAllAsync();
-        IEnumerable<Address> addressList = addresses.ToList();
+        // Фільтруємо адреси лише для поточного користувача
+        IEnumerable<Address> addressList = addresses.Where(a => a.UserId == userId).ToList();
 
         if (!addressList.Any())
         {
-            return NotFound();
+            return NotFound("У вас ще немає збережених адрес");
         }
         
         await unitOfWork.CompleteAsync();
@@ -51,11 +59,24 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
     [HttpGet("{id:int}", Name = "address")]
     public async Task<ActionResult<AddressDto>> GetById(int id)
     {
+        // Отримуємо ID поточного користувача з JWT токена
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized("Невійсний токен користувача");
+        }
+
         var address = await unitOfWork.Addresses.GetByIdAsync(id);
 
         if (address == null)
         {
-            return NotFound();
+            return NotFound("Адресу не знайдено");
+        }
+
+        // Перевіряємо, чи адреса належить поточному користувачу
+        if (address.UserId != userId)
+        {
+            return Forbid("У вас немає доступу до цієї адреси");
         }
 
         await unitOfWork.CompleteAsync();
@@ -169,14 +190,27 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
     [HttpPut("{id:int}", Name = "updateAddress")]
     public async Task<ActionResult<AddressDto>> Update(int id, AddressDto addressDto)
     {
+        // Отримуємо ID поточного користувача з JWT токена
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized("Невійсний токен користувача");
+        }
+
         var address = await unitOfWork.Addresses.GetByIdAsync(id);
 
         if (address == null)
         {
-            return NotFound();
+            return NotFound("Адресу не знайдено");
         }
 
-        address.UserId = addressDto.UserId;
+        // Перевіряємо, чи адреса належить поточному користувачу
+        if (address.UserId != userId)
+        {
+            return Forbid("У вас немає доступу до цієї адреси");
+        }
+
+        // Не дозволяємо змінювати UserId - адреса завжди належить поточному користувачу
         address.RegionId = addressDto.RegionId;
         address.ZipCode = addressDto.ZipCode;
         address.City = addressDto.City;
@@ -214,11 +248,24 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
     [HttpDelete("{id:int}", Name = "deleteAddress")]
     public async Task<ActionResult> Delete(int id)
     {
+        // Отримуємо ID поточного користувача з JWT токена
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+        {
+            return Unauthorized("Невійсний токен користувача");
+        }
+
         var address = await unitOfWork.Addresses.GetByIdAsync(id);
 
         if (address == null)
         {
-            return NotFound();
+            return NotFound("Адресу не знайдено");
+        }
+
+        // Перевіряємо, чи адреса належить поточному користувачу
+        if (address.UserId != userId)
+        {
+            return Forbid("У вас немає доступу до цієї адреси");
         }
 
         unitOfWork.Addresses.Delete(address);

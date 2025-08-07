@@ -25,7 +25,7 @@ public class CreateAddressDto
     [Required(ErrorMessage = "Поле 'Поштовий індекс' є обов'язковим")]
     [StringLength(5, MinimumLength = 5, ErrorMessage = "Поштовий індекс має складатися з 5 символів")]
     [RegularExpression(@"^\d{5}$", ErrorMessage = "Поштовий індекс має містити тільки 5 цифр")]
-    public string ZipCode { get; set; }
+    public required string ZipCode { get; set; }
 
     [StringLength(500, ErrorMessage = "Примітки не можуть перевищувати 500 символів")]
     public string? Notes { get; set; }

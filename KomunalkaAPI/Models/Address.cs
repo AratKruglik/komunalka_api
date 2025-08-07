@@ -31,7 +31,7 @@ public class Address
     
     [Required]
     [StringLength(5)]
-    public string ZipCode { get; set; } // Поштовий індекс
+    public required string ZipCode { get; set; } // Поштовий індекс
     
     [StringLength(500)]
     public string? Notes { get; set; } // Примітки
