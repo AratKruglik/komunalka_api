@@ -1,21 +1,185 @@
-@KomunalkaAPI_HostAddress = http://localhost:5242/api
+@KomunalkaAPI_HostAddress = https://localhost:7095/api
 
+# JWT Token variables (update these after login)
+@jwt_token = your_jwt_token_here
+@refresh_token = your_refresh_token_here
+
+### Authentication Endpoints
+
+# Register new user
+POST {{KomunalkaAPI_HostAddress}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test+3@example.com",
+  "password": "password123",
+  "confirmPassword": "password123"
+}
+
+###
+
+# Login user
+POST {{KomunalkaAPI_HostAddress}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test+3@example.com",
+  "password": "password123"
+}
+
+###
+
+# Refresh JWT Token
+POST {{KomunalkaAPI_HostAddress}}/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refresh_token}}"
+}
+
+###
+
+# Revoke refresh token (requires authentication)
+POST {{KomunalkaAPI_HostAddress}}/auth/revoke-token
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "refreshToken": "{{refresh_token}}"
+}
+
+###
+
+# Validate JWT token
+GET {{KomunalkaAPI_HostAddress}}/auth/validate-token
+Authorization: Bearer {{jwt_token}}
+
+### User Management Endpoints
+
+# Get all users (requires authentication)
 GET {{KomunalkaAPI_HostAddress}}/users
 Accept: application/json
+Authorization: Bearer {{jwt_token}}
 
 ###
 
+# Get user by ID (requires authentication)
 GET {{KomunalkaAPI_HostAddress}}/users/1
 Accept: application/json
+Authorization: Bearer {{jwt_token}}
 
 ###
 
+# Create new user (requires authentication)
+POST {{KomunalkaAPI_HostAddress}}/users
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "username": "newuser",
+  "email": "newuser@example.com",
+  "password": "password123"
+}
+
+###
+
+# Update user (requires authentication)
+PUT {{KomunalkaAPI_HostAddress}}/users/1
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "username": "updateduser",
+  "email": "updated@example.com",
+  "password": "newpassword123"
+}
+
+###
+
+# Delete user (requires authentication)
+DELETE {{KomunalkaAPI_HostAddress}}/users/1
+Authorization: Bearer {{jwt_token}}
+
+### Address Management Endpoints
+
+# Get all addresses (requires authentication)
 GET {{KomunalkaAPI_HostAddress}}/address
 Accept: application/json
+Authorization: Bearer {{jwt_token}}
 
 ###
 
+# Get address by ID (requires authentication)
 GET {{KomunalkaAPI_HostAddress}}/address/1
 Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# Update address (requires authentication)
+PUT {{KomunalkaAPI_HostAddress}}/address/1
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "userId": 1,
+  "zipCode": "12345",
+  "city": "Test City",
+  "street": "Test Street 123",
+  "building": "Building A"
+}
+
+###
+
+# Delete address (requires authentication)
+DELETE {{KomunalkaAPI_HostAddress}}/address/1
+Authorization: Bearer {{jwt_token}}
+
+### Currency Management Endpoints
+
+# Get all currencies (requires authentication)
+GET {{KomunalkaAPI_HostAddress}}/currency
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# Get currency by ID (requires authentication)
+GET {{KomunalkaAPI_HostAddress}}/currency/2
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# Create new currency (requires authentication)
+POST {{KomunalkaAPI_HostAddress}}/currency
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "name": "US Dollar",
+  "code": "USD",
+  "symbol": "$"
+}
+
+###
+
+# Update currency (requires authentication)
+PUT {{KomunalkaAPI_HostAddress}}/currency/1
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "name": "Euro",
+  "code": "EUR",
+  "symbol": "€"
+}
+
+###
+
+# Delete currency (requires authentication)
+DELETE {{KomunalkaAPI_HostAddress}}/currency/1
+Authorization: Bearer {{jwt_token}}
 
 ###

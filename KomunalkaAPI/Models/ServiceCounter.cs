@@ -12,7 +12,7 @@ public class ServiceCounter
     public int ServiceCounterMeasurementId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-    public ServiceCounterMeasurement ServiceCounterMeasurement { get; set; }
-    public ServiceCategory ServiceCategory { get; set; }
+    public required ServiceCounterMeasurement ServiceCounterMeasurement { get; set; }
+    public required ServiceCategory ServiceCategory { get; set; }
     
 }

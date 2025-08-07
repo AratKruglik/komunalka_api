@@ -6,10 +6,10 @@ using Models;
 
 public interface IAddressRepository : IRepository<Address>
 {
-    Task<IEnumerable<Address>> GetAllAsync();
-    Task<Address?> GetByIdAsync(int id);
+    new Task<IEnumerable<Address>> GetAllAsync();
+    new Task<Address?> GetByIdAsync(int id);
     Task<IEnumerable<Address>> GetWithDeletedAsync();
-    Task<EntityEntry<Address>> AddAsync(Address address);
-    void Update(Address address);
-    void Delete(Address address);
+    new Task<EntityEntry<Address>> AddAsync(Address address);
+    new void Update(Address address);
+    new void Delete(Address address);
 }

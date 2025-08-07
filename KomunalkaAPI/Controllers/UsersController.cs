@@ -2,6 +2,7 @@ using KomunalkaAPI.DTO;
 using KomunalkaAPI.Models;
 using KomunalkaAPI.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace KomunalkaAPI.Controllers;
 
@@ -86,7 +87,7 @@ public class UsersController(IUnitOfWork unitOfWork) : ControllerBase
         var user = new User
         {
             Username = userDto.Username,
-            Password = userDto.Password,
+            Password = userDto.Password ?? string.Empty,
             Email = userDto.Email,
         };
         
@@ -117,7 +118,7 @@ public class UsersController(IUnitOfWork unitOfWork) : ControllerBase
         }
 
         user.Username = userDto.Username;
-        user.Password = userDto.Password;
+        user.Password = userDto.Password ?? user.Password;
         user.Email = userDto.Email;
         user.UpdatedAt = DateTime.UtcNow;
         

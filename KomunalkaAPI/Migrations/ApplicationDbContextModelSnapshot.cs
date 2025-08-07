@@ -46,7 +46,6 @@ namespace KomunalkaAPI.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Street")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -121,6 +120,40 @@ namespace KomunalkaAPI.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Currencies");
+                });
+
+            modelBuilder.Entity("KomunalkaAPI.Models.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("KomunalkaAPI.Models.ServiceCategory", b =>
@@ -296,6 +329,9 @@ namespace KomunalkaAPI.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Role")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -318,7 +354,7 @@ namespace KomunalkaAPI.Migrations
                         .HasForeignKey("ServiceCategoryId");
 
                     b.HasOne("KomunalkaAPI.Models.User", "User")
-                        .WithMany()
+                        .WithMany("Addresses")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -343,6 +379,17 @@ namespace KomunalkaAPI.Migrations
                     b.Navigation("Address");
 
                     b.Navigation("ServiceCategory");
+                });
+
+            modelBuilder.Entity("KomunalkaAPI.Models.RefreshToken", b =>
+                {
+                    b.HasOne("KomunalkaAPI.Models.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("KomunalkaAPI.Models.ServiceCounter", b =>
@@ -418,6 +465,13 @@ namespace KomunalkaAPI.Migrations
             modelBuilder.Entity("KomunalkaAPI.Models.ServiceCategory", b =>
                 {
                     b.Navigation("Addresses");
+                });
+
+            modelBuilder.Entity("KomunalkaAPI.Models.User", b =>
+                {
+                    b.Navigation("Addresses");
+
+                    b.Navigation("RefreshTokens");
                 });
 #pragma warning restore 612, 618
         }

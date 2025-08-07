@@ -9,5 +9,5 @@ public class ServiceCategory
     public required string Name { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-    public List<Address> Addresses { get; set; }
+    public required List<Address> Addresses { get; set; } = new();
 }

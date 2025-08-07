@@ -6,10 +6,10 @@ using Models;
 
 public interface IUserRepository : IRepository<User>
 {
-    Task<IEnumerable<User>> GetAllAsync();
-    Task<User?> GetByIdAsync(int id);
+    new Task<IEnumerable<User>> GetAllAsync();
+    new Task<User?> GetByIdAsync(int id);
     Task<User?> GetByEmailAsync(string email);
-    Task<EntityEntry<User>> AddAsync(User user);
-    void Update(User user);
-    void Delete(User user);
+    new Task<EntityEntry<User>> AddAsync(User user);
+    new void Update(User user);
+    new void Delete(User user);
 }
