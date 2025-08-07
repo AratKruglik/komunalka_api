@@ -46,8 +46,14 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
             Notes = address.Notes,
             IsPrimary = address.IsPrimary,
             AddressTypeId = address.AddressTypeId,
-            User = address.User,
-            Region = address.Region,
+            // User = address.User,
+            Region = address.Region != null ? new RegionDto
+            {
+                Id = address.Region.Id,
+                Name = address.Region.Name,
+                CreatedAt = address.Region.CreatedAt,
+                UpdatedAt = address.Region.UpdatedAt
+            } : null,
             AddressType = address.AddressType,
             CreatedAt = address.CreatedAt,
             UpdatedAt = address.UpdatedAt
@@ -94,8 +100,14 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
             Notes = address.Notes,
             IsPrimary = address.IsPrimary,
             AddressTypeId = address.AddressTypeId,
-            User = address.User,
-            Region = address.Region,
+            // User = address.User,
+            Region = address.Region != null ? new RegionDto
+            {
+                Id = address.Region.Id,
+                Name = address.Region.Name,
+                CreatedAt = address.Region.CreatedAt,
+                UpdatedAt = address.Region.UpdatedAt
+            } : null,
             AddressType = address.AddressType,
             CreatedAt = address.CreatedAt,
             UpdatedAt = address.UpdatedAt
@@ -178,7 +190,13 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
             Notes = createdAddress.Notes,
             IsPrimary = createdAddress.IsPrimary,
             AddressTypeId = createdAddress.AddressTypeId,
-            Region = createdAddress.Region,
+            Region = createdAddress.Region != null ? new RegionDto
+            {
+                Id = createdAddress.Region.Id,
+                Name = createdAddress.Region.Name,
+                CreatedAt = createdAddress.Region.CreatedAt,
+                UpdatedAt = createdAddress.Region.UpdatedAt
+            } : null,
             AddressType = createdAddress.AddressType,
             CreatedAt = createdAddress.CreatedAt,
             UpdatedAt = createdAddress.UpdatedAt

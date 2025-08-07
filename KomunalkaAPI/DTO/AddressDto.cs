@@ -15,8 +15,8 @@ public class AddressDto
     public string? Notes { get; set; }
     public bool IsPrimary { get; set; }
     public int AddressTypeId { get; set; }
-    public User? User { get; set; }
-    public Region? Region { get; set; }
+    // public User? User { get; set; }
+    public RegionDto? Region { get; set; }
     public AddressType? AddressType { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
