@@ -47,9 +47,9 @@ public static class SeedData
         {
             var addressTypes = new List<AddressType>
             {
-                new() { Name = "Квартира", Description = "Житлове приміщення в багатоквартирному будинку", Icon = "🏠" },
-                new() { Name = "Приватний будинок", Description = "Окремостоячий житловий будинок", Icon = "🏡" },
-                new() { Name = "Офіс", Description = "Комерційне приміщення для ведення бізнесу", Icon = "🏢" }
+                new() { Name = "Квартира", Description = "Житлове приміщення в багатоквартирному будинку", Icon = "BuildingOffice2Icon" },
+                new() { Name = "Приватний будинок", Description = "Окремостоячий житловий будинок", Icon = "HomeIcon" },
+                new() { Name = "Офіс", Description = "Комерційне приміщення для ведення бізнесу", Icon = "BuildingOfficeIcon" }
             };
 
             await context.AddressTypes.AddRangeAsync(addressTypes);
