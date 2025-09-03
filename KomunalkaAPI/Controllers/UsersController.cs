@@ -11,14 +11,14 @@ namespace KomunalkaAPI.Controllers;
 public class UsersController(IUnitOfWork unitOfWork) : ControllerBase
 {
     [HttpGet(Name = "users")]
-    public async Task<ActionResult<UserDto>> GetAll()
+    public async Task<ActionResult<ApiResponse<List<UserDto>>>> GetAll()
     {
         var users = await unitOfWork.Users.GetAllAsync();
         IEnumerable<User> userList = users.ToList();
         
         if (!userList.Any())
         {
-            return NotFound();
+            return NotFound(ApiResponse<List<UserDto>>.Fail(new[] { "Користувачів не знайдено" }, "Not Found"));
         }
         await unitOfWork.CompleteAsync();
 
@@ -48,17 +48,17 @@ public class UsersController(IUnitOfWork unitOfWork) : ControllerBase
             UpdatedAt = user.UpdatedAt,
         }).ToList();
     
-        return Ok(userDtos);
+        return Ok(ApiResponse<List<UserDto>>.Success(userDtos, "Користувачів отримано"));
     }
     
     [HttpGet("{id:int}", Name = "user")]
-    public async Task<ActionResult<UserDto>> GetById(int id)
+    public async Task<ActionResult<ApiResponse<UserDto>>> GetById(int id)
     {
         var user = await unitOfWork.Users.GetByIdAsync(id);
         
         if (user == null)
         {
-            return NotFound();
+            return NotFound(ApiResponse<UserDto>.Fail(new[] { "Користувача не знайдено" }, "Not Found"));
         }
         await unitOfWork.CompleteAsync();
 
@@ -88,11 +88,11 @@ public class UsersController(IUnitOfWork unitOfWork) : ControllerBase
             UpdatedAt = user.UpdatedAt,
         };
         
-        return Ok(userDto);
+        return Ok(ApiResponse<UserDto>.Success(userDto, "Користувача отримано"));
     }
     
     [HttpPost(Name = "createUser")]
-    public async Task<ActionResult<UserDto>> Create(UserDto userDto)
+    public async Task<ActionResult<ApiResponse<UserDto>>> Create(UserDto userDto)
     {
         var user = new User
         {
@@ -114,17 +114,17 @@ public class UsersController(IUnitOfWork unitOfWork) : ControllerBase
             UpdatedAt = createdUser.UpdatedAt,
         };
         
-        return CreatedAtRoute("user", new { id = createdUserDto.Id }, createdUserDto);
+        return CreatedAtRoute("user", new { id = createdUserDto.Id }, ApiResponse<UserDto>.Success(createdUserDto, "Користувача створено"));
     }
     
     [HttpPut("{id:int}", Name = "updateUser")]
-    public async Task<ActionResult<UserDto>> Update(int id, UserDto userDto)
+    public async Task<ActionResult<ApiResponse<UserDto>>> Update(int id, UserDto userDto)
     {
         var user = await unitOfWork.Users.GetByIdAsync(id);
         
         if (user == null)
         {
-            return NotFound();
+            return NotFound(ApiResponse<UserDto>.Fail(new[] { "Користувача не знайдено" }, "Not Found"));
         }
 
         user.Username = userDto.Username;
@@ -144,22 +144,22 @@ public class UsersController(IUnitOfWork unitOfWork) : ControllerBase
             UpdatedAt = user.UpdatedAt,
         };
         
-        return Ok(updatedUserDto);
+        return Ok(ApiResponse<UserDto>.Success(updatedUserDto, "Користувача оновлено"));
     }
     
     [HttpDelete("{id:int}", Name = "deleteUser")]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<ActionResult<ApiResponse<object>>> Delete(int id)
     {
         var user = await unitOfWork.Users.GetByIdAsync(id);
         
         if (user == null)
         {
-            return NotFound();
+            return NotFound(ApiResponse<object>.Fail(new[] { "Користувача не знайдено" }, "Not Found"));
         }
 
         unitOfWork.Users.Delete(user);
         await unitOfWork.CompleteAsync();
         
-        return NoContent();
+        return Ok(ApiResponse<object>.Success(null, "Користувача видалено"));
     }
 }

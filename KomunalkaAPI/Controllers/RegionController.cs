@@ -11,14 +11,14 @@ namespace KomunalkaAPI.Controllers;
 public class RegionController(IUnitOfWork unitOfWork) : ControllerBase
 {
     [HttpGet(Name = "regions")]
-    public async Task<ActionResult<IEnumerable<RegionDto>>> GetAll()
+    public async Task<ActionResult<ApiResponse<List<RegionDto>>>> GetAll()
     {
         var regions = await unitOfWork.Regions.GetAllAsync();
         var regionList = regions.ToList();
 
         if (!regionList.Any())
         {
-            return NotFound("Області не знайдено");
+            return NotFound(ApiResponse<List<RegionDto>>.Fail(new[] { "Області не знайдено" }, "Not Found"));
         }
 
         await unitOfWork.CompleteAsync();
@@ -31,17 +31,17 @@ public class RegionController(IUnitOfWork unitOfWork) : ControllerBase
             UpdatedAt = region.UpdatedAt
         }).ToList();
 
-        return Ok(regionDtos);
+        return Ok(ApiResponse<List<RegionDto>>.Success(regionDtos, "Області отримано"));
     }
 
     [HttpGet("{id:int}", Name = "region")]
-    public async Task<ActionResult<RegionDto>> GetById(int id)
+    public async Task<ActionResult<ApiResponse<RegionDto>>> GetById(int id)
     {
         var region = await unitOfWork.Regions.GetByIdAsync(id);
 
         if (region == null)
         {
-            return NotFound("Область не знайдено");
+            return NotFound(ApiResponse<RegionDto>.Fail(new[] { "Область не знайдено" }, "Not Found"));
         }
 
         await unitOfWork.CompleteAsync();
@@ -54,6 +54,6 @@ public class RegionController(IUnitOfWork unitOfWork) : ControllerBase
             UpdatedAt = region.UpdatedAt
         };
 
-        return Ok(regionDto);
+        return Ok(ApiResponse<RegionDto>.Success(regionDto, "Область отримано"));
     }
 }

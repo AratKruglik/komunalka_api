@@ -2,6 +2,7 @@ using KomunalkaAPI.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using KomunalkaAPI.Models;
 using KomunalkaAPI.DTO;
+using KomunalkaAPI.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
@@ -13,7 +14,7 @@ namespace KomunalkaAPI.Controllers;
 public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
 {
     [HttpGet(Name = "addresses")]
-    public async Task<ActionResult<IEnumerable<AddressDto>>> GetAll(
+    public async Task<ActionResult<ApiResponse<List<AddressDto>>>> GetAll(
         [FromQuery] int skip = 0,
         [FromQuery] int take = 50,
         [FromQuery] string? sortBy = null,
@@ -24,7 +25,7 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Problem(title: "Unauthorized", detail: "Невійсний токен користувача", statusCode: StatusCodes.Status401Unauthorized);
+            return StatusCode(StatusCodes.Status401Unauthorized, ApiResponse<List<AddressDto>>.Fail(new[] { "Невійсний токен користувача" }, "Unauthorized"));
         }
 
         // Отримуємо адреси користувача з БД (залежності включені)
@@ -33,7 +34,7 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
 
         if (totalCount == 0)
         {
-            return NotFound(new ProblemDetails { Title = "Not Found", Detail = "У вас ще немає збережених адрес", Status = StatusCodes.Status404NotFound, Instance = HttpContext.Request.Path });
+            return NotFound(ApiResponse<List<AddressDto>>.Fail(new[] { "У вас ще немає збережених адрес" }, "Not Found"));
         }
 
         // ETag for caching
@@ -84,7 +85,8 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
             UpdatedAt = address.UpdatedAt
         }).ToList();
 
-        return Ok(addressDtos);
+        var meta = new PaginationMeta { Skip = skip, Take = take, Returned = addressDtos.Count, Total = totalCount };
+        return Ok(ApiResponse<List<AddressDto>>.Success(addressDtos, "Адреси отримано", meta));
     }
 
     [HttpGet("{id:int}", Name = "address")]
