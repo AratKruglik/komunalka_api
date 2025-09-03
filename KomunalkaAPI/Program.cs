@@ -76,6 +76,12 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 // Services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+// Domain services
+builder.Services.AddScoped<KomunalkaAPI.Services.Address.IAddressService, KomunalkaAPI.Services.Address.AddressService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.Users.IUserService, KomunalkaAPI.Services.Users.UsersService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.Currency.ICurrencyService, KomunalkaAPI.Services.Currency.CurrencyService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.Region.IRegionService, KomunalkaAPI.Services.Region.RegionService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.AddressType.IAddressTypeService, KomunalkaAPI.Services.AddressType.AddressTypeService>();
 
 // Add OpenAPI with JWT Auth support
 builder.Services.AddEndpointsApiExplorer();
