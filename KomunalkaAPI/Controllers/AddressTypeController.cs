@@ -17,10 +17,10 @@ public class AddressTypeController(IAddressTypeService addressTypeService) : Con
 
         if (!addressTypeList.Any())
         {
-            return NotFound(ApiResponse<List<AddressTypeDto>>.Fail(new[] { "Типи адрес не знайдено" }, "Not Found"));
+            return NotFound(ApiResponse<List<AddressTypeDto>>.Fail(new[] { "Address types not found" }, "Not Found"));
         }
 
-        return Ok(ApiResponse<List<AddressTypeDto>>.Success(addressTypeList.ToList(), "Типи адрес отримано"));
+        return Ok(ApiResponse<List<AddressTypeDto>>.Success(addressTypeList.ToList(), "Address types retrieved"));
     }
 
     [HttpGet("{id:int}", Name = "addressType")]
@@ -30,9 +30,9 @@ public class AddressTypeController(IAddressTypeService addressTypeService) : Con
 
         if (result.NotFound)
         {
-            return NotFound(ApiResponse<AddressTypeDto>.Fail(new[] { "Тип адреси не знайдено" }, "Not Found"));
+            return NotFound(ApiResponse<AddressTypeDto>.Fail(new[] { "Address type not found" }, "Not Found"));
         }
 
-        return Ok(ApiResponse<AddressTypeDto>.Success(result.Data!, "Тип адреси отримано"));
+        return Ok(ApiResponse<AddressTypeDto>.Success(result.Data!, "Address type retrieved"));
     }
 }

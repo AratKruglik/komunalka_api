@@ -16,10 +16,10 @@ public class RegionController(IRegionService regionService) : ControllerBase
         var regions = await regionService.GetAllAsync();
         if (!regions.Any())
         {
-            return NotFound(ApiResponse<List<RegionDto>>.Fail(new[] { "Області не знайдено" }, "Not Found"));
+            return NotFound(ApiResponse<List<RegionDto>>.Fail(new[] { "Regions not found" }, "Not Found"));
         }
 
-        return Ok(ApiResponse<List<RegionDto>>.Success(regions.ToList(), "Області отримано"));
+        return Ok(ApiResponse<List<RegionDto>>.Success(regions.ToList(), "Regions retrieved"));
     }
 
     [HttpGet("{id:int}", Name = "region")]
@@ -29,9 +29,9 @@ public class RegionController(IRegionService regionService) : ControllerBase
 
         if (result.NotFound)
         {
-            return NotFound(ApiResponse<RegionDto>.Fail(new[] { "Область не знайдено" }, "Not Found"));
+            return NotFound(ApiResponse<RegionDto>.Fail(new[] { "Region not found" }, "Not Found"));
         }
 
-        return Ok(ApiResponse<RegionDto>.Success(result.Data!, "Область отримано"));
+        return Ok(ApiResponse<RegionDto>.Success(result.Data!, "Region retrieved"));
     }
 }

@@ -14,9 +14,9 @@ public class CurrencyController(ICurrencyService currencyService) : ControllerBa
         var list = await currencyService.GetAllAsync();
         if (!list.Any())
         {
-            return NotFound(ApiResponse<List<CurrencyDto>>.Fail(new[] { "Валюти не знайдено" }, "Not Found"));
+            return NotFound(ApiResponse<List<CurrencyDto>>.Fail(new[] { "Currencies not found" }, "Not Found"));
         }
-        return Ok(ApiResponse<List<CurrencyDto>>.Success(list.ToList(), "Валюти отримано"));
+        return Ok(ApiResponse<List<CurrencyDto>>.Success(list.ToList(), "Currencies retrieved"));
     }
 
     [HttpGet("{id:int}", Name = "currency")]
@@ -25,16 +25,16 @@ public class CurrencyController(ICurrencyService currencyService) : ControllerBa
         var result = await currencyService.GetByIdAsync(id);
         if (result.NotFound)
         {
-            return NotFound(ApiResponse<CurrencyDto>.Fail(new[] { "Валюту не знайдено" }, "Not Found"));
+            return NotFound(ApiResponse<CurrencyDto>.Fail(new[] { "Currency not found" }, "Not Found"));
         }
-        return Ok(ApiResponse<CurrencyDto>.Success(result.Data!, "Валюта отримана"));
+        return Ok(ApiResponse<CurrencyDto>.Success(result.Data!, "Currency retrieved"));
     }
 
     [HttpPost(Name = "createCurrency")]
     public async Task<ActionResult<ApiResponse<CurrencyDto>>> CreateCurrency(CreateCurrencyDto createCurrencyDto)
     {
         var currencyDto = await currencyService.CreateAsync(createCurrencyDto);
-        return CreatedAtRoute("currency", new { id = currencyDto.Id }, ApiResponse<CurrencyDto>.Success(currencyDto, "Валюта створена"));
+        return CreatedAtRoute("currency", new { id = currencyDto.Id }, ApiResponse<CurrencyDto>.Success(currencyDto, "Currency created"));
     }
 
     [HttpPut("{id:int}", Name = "updateCurrency")]
@@ -43,9 +43,9 @@ public class CurrencyController(ICurrencyService currencyService) : ControllerBa
         var result = await currencyService.UpdateAsync(id, updateCurrencyDto);
         if (result.NotFound)
         {
-            return NotFound(ApiResponse<CurrencyDto>.Fail(new[] { "Валюту не знайдено" }, "Not Found"));
+            return NotFound(ApiResponse<CurrencyDto>.Fail(new[] { "Currency not found" }, "Not Found"));
         }
-        return Ok(ApiResponse<CurrencyDto>.Success(result.Data!, "Валюту оновлено"));
+        return Ok(ApiResponse<CurrencyDto>.Success(result.Data!, "Currency updated"));
     }
 
     [HttpDelete("{id:int}", Name = "deleteCurrency")]
@@ -54,8 +54,8 @@ public class CurrencyController(ICurrencyService currencyService) : ControllerBa
         var result = await currencyService.DeleteAsync(id);
         if (result.NotFound)
         {
-            return NotFound(ApiResponse<object>.Fail(new[] { "Валюту не знайдено" }, "Not Found"));
+            return NotFound(ApiResponse<object>.Fail(new[] { "Currency not found" }, "Not Found"));
         }
-        return Ok(ApiResponse<object>.Success(null, "Валюту видалено"));
+        return Ok(ApiResponse<object>.Success(null, "Currency deleted"));
     }
 }

@@ -14,10 +14,10 @@ public class UsersController(IUserService userService) : ControllerBase
         var users = await userService.GetAllAsync();
         if (!users.Any())
         {
-            return NotFound(ApiResponse<List<UserDto>>.Fail(new[] { "Користувачів не знайдено" }, "Not Found"));
+            return NotFound(ApiResponse<List<UserDto>>.Fail(new[] { "Users not found" }, "Not Found"));
         }
 
-        return Ok(ApiResponse<List<UserDto>>.Success(users.ToList(), "Користувачів отримано"));
+        return Ok(ApiResponse<List<UserDto>>.Success(users.ToList(), "Users retrieved"));
     }
 
     [HttpGet("{id:int}", Name = "user")]
@@ -27,17 +27,17 @@ public class UsersController(IUserService userService) : ControllerBase
 
         if (result.NotFound)
         {
-            return NotFound(ApiResponse<UserDto>.Fail(new[] { "Користувача не знайдено" }, "Not Found"));
+            return NotFound(ApiResponse<UserDto>.Fail(new[] { "User not found" }, "Not Found"));
         }
 
-        return Ok(ApiResponse<UserDto>.Success(result.Data!, "Користувача отримано"));
+        return Ok(ApiResponse<UserDto>.Success(result.Data!, "User retrieved"));
     }
 
     [HttpPost(Name = "createUser")]
     public async Task<ActionResult<ApiResponse<UserDto>>> Create(UserDto userDto)
     {
         var createdUserDto = await userService.CreateAsync(userDto);
-        return CreatedAtRoute("user", new { id = createdUserDto.Id }, ApiResponse<UserDto>.Success(createdUserDto, "Користувача створено"));
+        return CreatedAtRoute("user", new { id = createdUserDto.Id }, ApiResponse<UserDto>.Success(createdUserDto, "User created"));
     }
 
     [HttpPut("{id:int}", Name = "updateUser")]
@@ -47,7 +47,7 @@ public class UsersController(IUserService userService) : ControllerBase
 
         if (result.NotFound)
         {
-            return NotFound(ApiResponse<UserDto>.Fail(new[] { "Користувача не знайдено" }, "Not Found"));
+            return NotFound(ApiResponse<UserDto>.Fail(new[] { "User not found" }, "Not Found"));
         }
 
         return Ok(ApiResponse<UserDto>.Success(result.Data!, "Користувача оновлено"));
