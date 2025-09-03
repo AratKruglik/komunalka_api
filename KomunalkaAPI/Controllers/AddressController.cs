@@ -13,25 +13,43 @@ namespace KomunalkaAPI.Controllers;
 public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
 {
     [HttpGet(Name = "addresses")]
-    public async Task<ActionResult<IEnumerable<AddressDto>>> GetAll()
+    public async Task<ActionResult<IEnumerable<AddressDto>>> GetAll(
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 50,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] bool desc = false,
+        CancellationToken cancellationToken = default)
     {
         // Отримуємо ID поточного користувача з JWT токена
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Unauthorized("Невійсний токен користувача");
+            return Problem(title: "Unauthorized", detail: "Невійсний токен користувача", statusCode: StatusCodes.Status401Unauthorized);
         }
 
-        var addresses = await unitOfWork.Addresses.GetAllAsync();
-        // Фільтруємо адреси лише для поточного користувача
-        IEnumerable<Address> addressList = addresses.Where(a => a.UserId == userId).ToList();
+        // Отримуємо адреси користувача з БД (залежності включені)
+        var addressList = await unitOfWork.Addresses.GetByUserIdAsync(userId, skip, take, sortBy, desc, includeDeps: true, cancellationToken);
+        var totalCount = await unitOfWork.Addresses.CountByUserIdAsync(userId, cancellationToken);
 
-        if (!addressList.Any())
+        if (totalCount == 0)
         {
-            return NotFound("У вас ще немає збережених адрес");
+            return NotFound(new ProblemDetails { Title = "Not Found", Detail = "У вас ще немає збережених адрес", Status = StatusCodes.Status404NotFound, Instance = HttpContext.Request.Path });
         }
-        
-        await unitOfWork.CompleteAsync();
+
+        // ETag for caching
+        var lastUpdatedTicks = addressList.Count > 0 ? addressList.Max(a => a.UpdatedAt).ToFileTimeUtc() : 0;
+        var etag = $"W/\"addr-{userId}-{totalCount}-{lastUpdatedTicks}\"";
+        var ifNoneMatch = Request.Headers["If-None-Match"].ToString();
+        if (!string.IsNullOrEmpty(ifNoneMatch) && string.Equals(ifNoneMatch, etag, StringComparison.Ordinal))
+        {
+            return StatusCode(StatusCodes.Status304NotModified);
+        }
+
+        Response.Headers["ETag"] = etag;
+        Response.Headers["Cache-Control"] = "private, max-age=30";
+        Response.Headers["X-Total-Count"] = totalCount.ToString();
+        Response.Headers["X-Skip"] = skip.ToString();
+        Response.Headers["X-Take"] = take.ToString();
 
         var addressDtos = addressList.Select(address => new AddressDto
         {
@@ -46,7 +64,6 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
             Notes = address.Notes,
             IsPrimary = address.IsPrimary,
             AddressTypeId = address.AddressTypeId,
-            // User = address.User,
             Region = address.Region != null ? new RegionDto
             {
                 Id = address.Region.Id,
@@ -54,7 +71,15 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
                 CreatedAt = address.Region.CreatedAt,
                 UpdatedAt = address.Region.UpdatedAt
             } : null,
-            AddressType = address.AddressType,
+            AddressType = address.AddressType != null ? new AddressTypeDto
+            {
+                Id = address.AddressType.Id,
+                Name = address.AddressType.Name,
+                Description = address.AddressType.Description,
+                Icon = address.AddressType.Icon,
+                CreatedAt = address.AddressType.CreatedAt,
+                UpdatedAt = address.AddressType.UpdatedAt
+            } : null,
             CreatedAt = address.CreatedAt,
             UpdatedAt = address.UpdatedAt
         }).ToList();
@@ -63,29 +88,37 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
     }
 
     [HttpGet("{id:int}", Name = "address")]
-    public async Task<ActionResult<AddressDto>> GetById(int id)
+    public async Task<ActionResult<AddressDto>> GetById(int id, CancellationToken cancellationToken = default)
     {
         // Отримуємо ID поточного користувача з JWT токена
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Unauthorized("Невійсний токен користувача");
+            return Problem(title: "Unauthorized", detail: "Невійсний токен користувача", statusCode: StatusCodes.Status401Unauthorized);
         }
 
         var address = await unitOfWork.Addresses.GetByIdAsync(id);
 
         if (address == null)
         {
-            return NotFound("Адресу не знайдено");
+            return NotFound(new ProblemDetails { Title = "Not Found", Detail = "Адресу не знайдено", Status = StatusCodes.Status404NotFound, Instance = HttpContext.Request.Path });
         }
 
         // Перевіряємо, чи адреса належить поточному користувачу
         if (address.UserId != userId)
         {
-            return Forbid("У вас немає доступу до цієї адреси");
+            return Forbid();
         }
 
-        await unitOfWork.CompleteAsync();
+        // ETag
+        var etag = $"W/\"addr-{address.Id}-{address.UpdatedAt.ToFileTimeUtc()}\"";
+        var ifNoneMatch = Request.Headers["If-None-Match"].ToString();
+        if (!string.IsNullOrEmpty(ifNoneMatch) && string.Equals(ifNoneMatch, etag, StringComparison.Ordinal))
+        {
+            return StatusCode(StatusCodes.Status304NotModified);
+        }
+        Response.Headers["ETag"] = etag;
+        Response.Headers["Cache-Control"] = "private, max-age=60";
 
         var addressDto = new AddressDto
         {
@@ -100,7 +133,6 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
             Notes = address.Notes,
             IsPrimary = address.IsPrimary,
             AddressTypeId = address.AddressTypeId,
-            // User = address.User,
             Region = address.Region != null ? new RegionDto
             {
                 Id = address.Region.Id,
@@ -108,7 +140,15 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
                 CreatedAt = address.Region.CreatedAt,
                 UpdatedAt = address.Region.UpdatedAt
             } : null,
-            AddressType = address.AddressType,
+            AddressType = address.AddressType != null ? new AddressTypeDto
+            {
+                Id = address.AddressType.Id,
+                Name = address.AddressType.Name,
+                Description = address.AddressType.Description,
+                Icon = address.AddressType.Icon,
+                CreatedAt = address.AddressType.CreatedAt,
+                UpdatedAt = address.AddressType.UpdatedAt
+            } : null,
             CreatedAt = address.CreatedAt,
             UpdatedAt = address.UpdatedAt
         };
@@ -117,7 +157,7 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
     }
 
     [HttpPost(Name = "createAddress")]
-    public async Task<ActionResult<AddressDto>> Create(CreateAddressDto createAddressDto)
+    public async Task<ActionResult<AddressDto>> Create(CreateAddressDto createAddressDto, CancellationToken cancellationToken = default)
     {
         if (!ModelState.IsValid)
         {
@@ -128,28 +168,27 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Unauthorized("Невійсний токен користувача");
+            return Problem(title: "Unauthorized", detail: "Невійсний токен користувача", statusCode: StatusCodes.Status401Unauthorized);
         }
 
         // Перевіряємо чи існують Region та AddressType
         var region = await unitOfWork.Regions.GetByIdAsync(createAddressDto.RegionId);
         if (region == null)
         {
-            return BadRequest("Вказана область не існує");
+            return BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Вказана область не існує", Status = StatusCodes.Status400BadRequest });
         }
 
         var addressType = await unitOfWork.AddressTypes.GetByIdAsync(createAddressDto.AddressTypeId);
         if (addressType == null)
         {
-            return BadRequest("Вказаний тип адреси не існує");
+            return BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Вказаний тип адреси не існує", Status = StatusCodes.Status400BadRequest });
         }
 
         // Якщо це основна адреса, встановлюємо всі інші адреси користувача як не основні
         if (createAddressDto.IsPrimary)
         {
-            var userAddresses = await unitOfWork.Addresses.GetAllAsync();
-            var currentUserAddresses = userAddresses.Where(a => a.UserId == userId && a.IsPrimary);
-            foreach (var addr in currentUserAddresses)
+            var currentUserAddresses = await unitOfWork.Addresses.GetUserAddressesAsync(userId, cancellationToken);
+            foreach (var addr in currentUserAddresses.Where(a => a.IsPrimary))
             {
                 addr.IsPrimary = false;
                 unitOfWork.Addresses.Update(addr);
@@ -197,7 +236,15 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
                 CreatedAt = createdAddress.Region.CreatedAt,
                 UpdatedAt = createdAddress.Region.UpdatedAt
             } : null,
-            AddressType = createdAddress.AddressType,
+            AddressType = createdAddress.AddressType != null ? new AddressTypeDto
+            {
+                Id = createdAddress.AddressType.Id,
+                Name = createdAddress.AddressType.Name,
+                Description = createdAddress.AddressType.Description,
+                Icon = createdAddress.AddressType.Icon,
+                CreatedAt = createdAddress.AddressType.CreatedAt,
+                UpdatedAt = createdAddress.AddressType.UpdatedAt
+            } : null,
             CreatedAt = createdAddress.CreatedAt,
             UpdatedAt = createdAddress.UpdatedAt
         };
@@ -206,29 +253,53 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
     }
 
     [HttpPut("{id:int}", Name = "updateAddress")]
-    public async Task<ActionResult<AddressDto>> Update(int id, AddressDto addressDto)
+    public async Task<ActionResult<AddressDto>> Update(int id, UpdateAddressDto addressDto, CancellationToken cancellationToken = default)
     {
         // Отримуємо ID поточного користувача з JWT токена
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Unauthorized("Невійсний токен користувача");
+            return Problem(title: "Unauthorized", detail: "Невійсний токен користувача", statusCode: StatusCodes.Status401Unauthorized);
         }
 
         var address = await unitOfWork.Addresses.GetByIdAsync(id);
 
         if (address == null)
         {
-            return NotFound("Адресу не знайдено");
+            return NotFound(new ProblemDetails { Title = "Not Found", Detail = "Адресу не знайдено", Status = StatusCodes.Status404NotFound, Instance = HttpContext.Request.Path });
         }
 
         // Перевіряємо, чи адреса належить поточному користувачу
         if (address.UserId != userId)
         {
-            return Forbid("У вас немає доступу до цієї адреси");
+            return Forbid();
         }
 
-        // Не дозволяємо змінювати UserId - адреса завжди належить поточному користувачу
+        // Валідація існування зовнішніх ключів
+        var region = await unitOfWork.Regions.GetByIdAsync(addressDto.RegionId);
+        if (region == null)
+        {
+            return BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Вказана область не існує", Status = StatusCodes.Status400BadRequest });
+        }
+
+        var addressType = await unitOfWork.AddressTypes.GetByIdAsync(addressDto.AddressTypeId);
+        if (addressType == null)
+        {
+            return BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Вказаний тип адреси не існує", Status = StatusCodes.Status400BadRequest });
+        }
+
+        // Якщо ця адреса стає основною — зняти прапор у інших
+        if (addressDto.IsPrimary)
+        {
+            var currentUserAddresses = await unitOfWork.Addresses.GetUserAddressesAsync(userId, cancellationToken);
+            foreach (var addr in currentUserAddresses.Where(a => a.IsPrimary && a.Id != id))
+            {
+                addr.IsPrimary = false;
+                unitOfWork.Addresses.Update(addr);
+            }
+        }
+
+        // Оновлення полів (UserId не змінюємо)
         address.RegionId = addressDto.RegionId;
         address.ZipCode = addressDto.ZipCode;
         address.City = addressDto.City;
@@ -256,6 +327,22 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
             Notes = address.Notes,
             IsPrimary = address.IsPrimary,
             AddressTypeId = address.AddressTypeId,
+            Region = region != null ? new RegionDto
+            {
+                Id = region.Id,
+                Name = region.Name,
+                CreatedAt = region.CreatedAt,
+                UpdatedAt = region.UpdatedAt
+            } : null,
+            AddressType = addressType != null ? new AddressTypeDto
+            {
+                Id = addressType.Id,
+                Name = addressType.Name,
+                Description = addressType.Description,
+                Icon = addressType.Icon,
+                CreatedAt = addressType.CreatedAt,
+                UpdatedAt = addressType.UpdatedAt
+            } : null,
             CreatedAt = address.CreatedAt,
             UpdatedAt = address.UpdatedAt,
         };
@@ -264,26 +351,26 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
     }
 
     [HttpDelete("{id:int}", Name = "deleteAddress")]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken = default)
     {
         // Отримуємо ID поточного користувача з JWT токена
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Unauthorized("Невійсний токен користувача");
+            return Problem(title: "Unauthorized", detail: "Невійсний токен користувача", statusCode: StatusCodes.Status401Unauthorized);
         }
 
         var address = await unitOfWork.Addresses.GetByIdAsync(id);
 
         if (address == null)
         {
-            return NotFound("Адресу не знайдено");
+            return NotFound(new ProblemDetails { Title = "Not Found", Detail = "Адресу не знайдено", Status = StatusCodes.Status404NotFound, Instance = HttpContext.Request.Path });
         }
 
         // Перевіряємо, чи адреса належить поточному користувачу
         if (address.UserId != userId)
         {
-            return Forbid("У вас немає доступу до цієї адреси");
+            return Forbid();
         }
 
         unitOfWork.Addresses.Delete(address);
