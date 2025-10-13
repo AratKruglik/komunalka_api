@@ -1,5 +1,3 @@
-using KomunalkaAPI.Models;
-
 namespace KomunalkaAPI.Repositories.RefreshToken;
 
 /// <summary>

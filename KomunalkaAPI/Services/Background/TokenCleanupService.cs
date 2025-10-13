@@ -1,6 +1,4 @@
 using KomunalkaAPI.Repositories;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace KomunalkaAPI.Services.Background;
 

@@ -1,6 +1,5 @@
 using KomunalkaAPI.Models.Pagination;
 using KomunalkaAPI.Models.Responses;
-using Microsoft.AspNetCore.Http;
 
 namespace KomunalkaAPI.Extensions;
 

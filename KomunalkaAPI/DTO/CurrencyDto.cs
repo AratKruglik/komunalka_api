@@ -1,5 +1,3 @@
-using System;
-
 namespace KomunalkaAPI.DTO;
 
 public class CurrencyDto

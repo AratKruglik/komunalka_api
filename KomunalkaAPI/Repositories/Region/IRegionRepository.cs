@@ -1,4 +1,3 @@
-using KomunalkaAPI.Models;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace KomunalkaAPI.Repositories.Region;

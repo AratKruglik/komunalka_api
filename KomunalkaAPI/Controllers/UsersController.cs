@@ -2,7 +2,6 @@ using KomunalkaAPI.DTO;
 using KomunalkaAPI.Models;
 using KomunalkaAPI.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace KomunalkaAPI.Controllers;
 
