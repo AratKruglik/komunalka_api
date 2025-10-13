@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using System.Text;
 using DotNetEnv;
 using KomunalkaAPI.Data;
+using KomunalkaAPI.Middleware;
 using KomunalkaAPI.Repositories;
 using KomunalkaAPI.Repositories.User;
 using KomunalkaAPI.Services.Auth;
@@ -52,7 +53,8 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    // Вимагати HTTPS в Production, дозволити HTTP в Development
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -66,9 +68,8 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Repositories
+// Repositories - Unit of Work pattern
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Services
 builder.Services.AddScoped<IJwtService, JwtService>();
@@ -113,6 +114,10 @@ app.Urls.Add($"https://localhost:{httpsPort}");
 
 
 // Configure the HTTP request pipeline.
+
+// Глобальний обробник винятків (повинен бути першим)
+app.UseMiddleware<ExceptionHandlerMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

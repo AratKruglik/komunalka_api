@@ -19,12 +19,11 @@ public class CurrencyController(IUnitOfWork unitOfWork) : ControllerBase
     {
         var currencies = await unitOfWork.Currencies.GetAllAsync();
         IEnumerable<Currency> currencyList = currencies.ToList();
-        
+
         if (!currencyList.Any())
         {
             return NotFound();
         }
-        await unitOfWork.CompleteAsync();
 
         var currencyDtos = currencyList.Select(currency => new CurrencyDto
         {
@@ -48,7 +47,6 @@ public class CurrencyController(IUnitOfWork unitOfWork) : ControllerBase
         {
             return NotFound();
         }
-        await unitOfWork.CompleteAsync();
 
         var currencyDto = new CurrencyDto
         {

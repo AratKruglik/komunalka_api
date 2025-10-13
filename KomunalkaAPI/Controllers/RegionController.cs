@@ -21,8 +21,6 @@ public class RegionController(IUnitOfWork unitOfWork) : ControllerBase
             return NotFound("Області не знайдено");
         }
 
-        await unitOfWork.CompleteAsync();
-
         var regionDtos = regionList.Select(region => new RegionDto
         {
             Id = region.Id,
@@ -43,8 +41,6 @@ public class RegionController(IUnitOfWork unitOfWork) : ControllerBase
         {
             return NotFound("Область не знайдено");
         }
-
-        await unitOfWork.CompleteAsync();
 
         var regionDto = new RegionDto
         {

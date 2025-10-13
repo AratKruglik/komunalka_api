@@ -30,8 +30,6 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
         {
             return NotFound("У вас ще немає збережених адрес");
         }
-        
-        await unitOfWork.CompleteAsync();
 
         var addressDtos = addressList.Select(address => new AddressDto
         {
@@ -84,8 +82,6 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
         {
             return Forbid("У вас немає доступу до цієї адреси");
         }
-
-        await unitOfWork.CompleteAsync();
 
         var addressDto = new AddressDto
         {

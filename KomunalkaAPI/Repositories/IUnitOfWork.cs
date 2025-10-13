@@ -4,6 +4,7 @@ using KomunalkaAPI.Repositories.ServiceCategory;
 using KomunalkaAPI.Repositories.User;
 using KomunalkaAPI.Repositories.Region;
 using KomunalkaAPI.Repositories.AddressType;
+using KomunalkaAPI.Repositories.RefreshToken;
 
 namespace KomunalkaAPI.Repositories;
 
@@ -15,5 +16,6 @@ public interface IUnitOfWork : IDisposable
     ICurrencyRepository Currencies { get; }
     IRegionRepository Regions { get; }
     IAddressTypeRepository AddressTypes { get; }
+    IRefreshTokenRepository RefreshTokens { get; }
     Task<int> CompleteAsync();
 }
