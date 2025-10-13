@@ -4,14 +4,14 @@ namespace KomunalkaAPI.DTO;
 
 public class CreateCurrencyDto
 {
-    [Required(ErrorMessage = "Поле 'Код валюти' є обов'язковим")]
-    [StringLength(10, ErrorMessage = "Код валюти не може перевищувати 10 символів")]
+    [Required(ErrorMessage = "Currency code is required")]
+    [StringLength(10, ErrorMessage = "Currency code cannot exceed 10 characters")]
     public string Code { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Поле 'Назва' є обов'язковим")]
-    [StringLength(255, ErrorMessage = "Назва валюти не може перевищувати 255 символів")]
+    [Required(ErrorMessage = "Currency name is required")]
+    [StringLength(255, ErrorMessage = "Currency name cannot exceed 255 characters")]
     public string Name { get; set; } = string.Empty;
 
-    [StringLength(10, ErrorMessage = "Символ валюти не може перевищувати 10 символів")]
+    [StringLength(10, ErrorMessage = "Currency symbol cannot exceed 10 characters")]
     public string? Symbol { get; set; }
 }

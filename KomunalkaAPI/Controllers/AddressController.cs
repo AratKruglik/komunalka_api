@@ -20,17 +20,17 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
     [HttpGet(Name = "addresses")]
     public async Task<ActionResult<PaginatedResponse<AddressDto>>> GetAll([FromQuery] PaginationParams paginationParams)
     {
-        // Отримуємо ID поточного користувача з JWT токена
+        // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Unauthorized("Невійсний токен користувача");
+            return Unauthorized("Invalid user token");
         }
 
-        // Отримуємо всі адреси з пагінацією
+        // Get all addresses with pagination
         var pagedAddresses = await unitOfWork.Addresses.GetPagedAsync(paginationParams);
 
-        // Фільтруємо адреси лише для поточного користувача
+        // Filter addresses only for current user
         var userAddresses = pagedAddresses.Items.Where(a => a.UserId == userId).ToList();
         var addressDtos = mapper.Map<List<AddressDto>>(userAddresses);
 
@@ -39,10 +39,10 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
             Items = addressDtos,
             PageNumber = pagedAddresses.PageNumber,
             PageSize = pagedAddresses.PageSize,
-            TotalCount = pagedAddresses.Items.Count(a => a.UserId == userId) // Кількість адрес користувача
+            TotalCount = pagedAddresses.Items.Count(a => a.UserId == userId) // Count of user addresses
         };
 
-        // Конвертуємо у Laravel-compatible format
+        // Convert to Laravel-compatible format
         var response = pagedResult.ToPaginatedResponse(addressDtos, Request);
 
         return Ok(response);
@@ -51,24 +51,24 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
     [HttpGet("{id:int}", Name = "address")]
     public async Task<ActionResult<AddressDto>> GetById(int id)
     {
-        // Отримуємо ID поточного користувача з JWT токена
+        // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Unauthorized("Невійсний токен користувача");
+            return Unauthorized("Invalid user token");
         }
 
         var address = await unitOfWork.Addresses.GetByIdAsync(id);
 
         if (address == null)
         {
-            return NotFound("Адресу не знайдено");
+            return NotFound("Address not found");
         }
 
-        // Перевіряємо, чи адреса належить поточному користувачу
+        // Check if the address belongs to the current user
         if (address.UserId != userId)
         {
-            return Forbid("У вас немає доступу до цієї адреси");
+            return Forbid("You don't have access to this address");
         }
 
         var addressDto = mapper.Map<AddressDto>(address);
@@ -84,27 +84,27 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
             return BadRequest(ModelState);
         }
 
-        // Отримуємо ID поточного користувача з JWT токена
+        // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Unauthorized("Невійсний токен користувача");
+            return Unauthorized("Invalid user token");
         }
 
-        // Перевіряємо чи існують Region та AddressType
+        // Check if Region and AddressType exist
         var region = await unitOfWork.Regions.GetByIdAsync(createAddressDto.RegionId);
         if (region == null)
         {
-            return BadRequest("Вказана область не існує");
+            return BadRequest("Specified region does not exist");
         }
 
         var addressType = await unitOfWork.AddressTypes.GetByIdAsync(createAddressDto.AddressTypeId);
         if (addressType == null)
         {
-            return BadRequest("Вказаний тип адреси не існує");
+            return BadRequest("Specified address type does not exist");
         }
 
-        // Якщо це основна адреса, встановлюємо всі інші адреси користувача як не основні
+        // If this is primary address, set all other user addresses as non-primary
         if (createAddressDto.IsPrimary)
         {
             var userAddresses = await unitOfWork.Addresses.GetAllAsync();
@@ -118,7 +118,7 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
 
         var address = mapper.Map<Address>(createAddressDto);
         address.UserId = userId;
-        address.User = null!; // Буде заповнено EF
+        address.User = null!; // Will be populated by EF
         address.Region = region;
         address.AddressType = addressType;
 
@@ -134,29 +134,29 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
     [HttpPut("{id:int}", Name = "updateAddress")]
     public async Task<ActionResult<AddressDto>> Update(int id, AddressDto addressDto)
     {
-        // Отримуємо ID поточного користувача з JWT токена
+        // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Unauthorized("Невійсний токен користувача");
+            return Unauthorized("Invalid user token");
         }
 
         var address = await unitOfWork.Addresses.GetByIdAsync(id);
 
         if (address == null)
         {
-            return NotFound("Адресу не знайдено");
+            return NotFound("Address not found");
         }
 
-        // Перевіряємо, чи адреса належить поточному користувачу
+        // Check if the address belongs to the current user
         if (address.UserId != userId)
         {
-            return Forbid("У вас немає доступу до цієї адреси");
+            return Forbid("You don't have access to this address");
         }
 
-        // Не дозволяємо змінювати UserId - адреса завжди належить поточному користувачу
+        // Don't allow changing UserId - address always belongs to current user
         mapper.Map(addressDto, address);
-        address.UserId = userId; // Гарантуємо, що UserId не змінюється
+        address.UserId = userId; // Ensure UserId doesn't change
         address.UpdatedAt = DateTime.UtcNow;
 
         unitOfWork.Addresses.Update(address);
@@ -170,24 +170,24 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
     [HttpDelete("{id:int}", Name = "deleteAddress")]
     public async Task<ActionResult> Delete(int id)
     {
-        // Отримуємо ID поточного користувача з JWT токена
+        // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Unauthorized("Невійсний токен користувача");
+            return Unauthorized("Invalid user token");
         }
 
         var address = await unitOfWork.Addresses.GetByIdAsync(id);
 
         if (address == null)
         {
-            return NotFound("Адресу не знайдено");
+            return NotFound("Address not found");
         }
 
-        // Перевіряємо, чи адреса належить поточному користувачу
+        // Check if the address belongs to the current user
         if (address.UserId != userId)
         {
-            return Forbid("У вас немає доступу до цієї адреси");
+            return Forbid("You don't have access to this address");
         }
 
         unitOfWork.Addresses.Delete(address);

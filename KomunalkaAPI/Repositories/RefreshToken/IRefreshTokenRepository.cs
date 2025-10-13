@@ -3,34 +3,34 @@ using KomunalkaAPI.Models;
 namespace KomunalkaAPI.Repositories.RefreshToken;
 
 /// <summary>
-/// Інтерфейс репозиторію для роботи з токенами оновлення
+/// Repository interface for working with refresh tokens
 /// </summary>
 public interface IRefreshTokenRepository : IRepository<Models.RefreshToken>
 {
     /// <summary>
-    /// Отримати токен оновлення за значенням токена
+    /// Get refresh token by token value
     /// </summary>
-    /// <param name="token">Значення токена</param>
-    /// <returns>Токен оновлення або null</returns>
+    /// <param name="token">Token value</param>
+    /// <returns>Refresh token or null</returns>
     Task<Models.RefreshToken?> GetByTokenAsync(string token);
 
     /// <summary>
-    /// Отримати токен оновлення за значенням токена з включеним користувачем
+    /// Get refresh token by token value with included user
     /// </summary>
-    /// <param name="token">Значення токена</param>
-    /// <returns>Токен оновлення з користувачем або null</returns>
+    /// <param name="token">Token value</param>
+    /// <returns>Refresh token with user or null</returns>
     Task<Models.RefreshToken?> GetByTokenWithUserAsync(string token);
 
     /// <summary>
-    /// Отримати всі активні токени оновлення користувача
+    /// Get all active refresh tokens for a user
     /// </summary>
-    /// <param name="userId">ID користувача</param>
-    /// <returns>Список активних токенів</returns>
+    /// <param name="userId">User ID</param>
+    /// <returns>List of active tokens</returns>
     Task<IEnumerable<Models.RefreshToken>> GetActiveTokensByUserIdAsync(int userId);
 
     /// <summary>
-    /// Видалити прострочені токени оновлення
+    /// Delete expired refresh tokens
     /// </summary>
-    /// <returns>Кількість видалених токенів</returns>
+    /// <returns>Number of deleted tokens</returns>
     Task<int> DeleteExpiredTokensAsync();
 }

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace KomunalkaAPI.Models;
 
 /// <summary>
-/// Тариф для лічильника
+/// Tariff for meter
 /// </summary>
 [Table("tariffs")]
 public class Tariff

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace KomunalkaAPI.Services.Background;
 
 /// <summary>
-/// Background service для періодичного очищення застарілих refresh токенів
+/// Background service for periodic cleanup of expired refresh tokens
 /// </summary>
 public class TokenCleanupService(IServiceProvider serviceProvider, ILogger<TokenCleanupService> logger) : BackgroundService
 {
@@ -13,7 +13,7 @@ public class TokenCleanupService(IServiceProvider serviceProvider, ILogger<Token
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("Token Cleanup Service запущено");
+        logger.LogInformation("Token Cleanup Service started");
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -24,13 +24,13 @@ public class TokenCleanupService(IServiceProvider serviceProvider, ILogger<Token
             }
             catch (OperationCanceledException)
             {
-                logger.LogInformation("Token Cleanup Service зупинено");
+                logger.LogInformation("Token Cleanup Service stopped");
                 break;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Помилка при очищенні застарілих токенів");
-                // Чекаємо менше часу після помилки
+                logger.LogError(ex, "Error cleaning up expired tokens");
+                // Wait less time after error
                 await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
             }
         }
@@ -48,19 +48,19 @@ public class TokenCleanupService(IServiceProvider serviceProvider, ILogger<Token
             if (deletedCount > 0)
             {
                 await unitOfWork.CompleteAsync();
-                logger.LogInformation("Видалено {Count} застарілих refresh токенів", deletedCount);
+                logger.LogInformation("Deleted {Count} expired refresh tokens", deletedCount);
             }
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Помилка при видаленні застарілих токенів з бази даних");
+            logger.LogError(ex, "Error deleting expired tokens from database");
             throw;
         }
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        logger.LogInformation("Token Cleanup Service зупиняється...");
+        logger.LogInformation("Token Cleanup Service stopping...");
         await base.StopAsync(cancellationToken);
     }
 }

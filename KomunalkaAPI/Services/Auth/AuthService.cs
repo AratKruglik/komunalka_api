@@ -6,7 +6,7 @@ using KomunalkaAPI.Repositories;
 namespace KomunalkaAPI.Services.Auth;
 
 /// <summary>
-/// Сервіс аутентифікації користувачів
+/// User authentication service
 /// </summary>
 public class AuthService(
     IUnitOfWork unitOfWork,
@@ -16,17 +16,17 @@ public class AuthService(
 {
     public async Task<AuthenticationResponse?> AuthenticateAsync(AuthenticationRequest request)
     {
-        logger.LogInformation("Спроба аутентифікації для email: {Email}", request.Email);
+        logger.LogInformation("Authentication attempt for email: {Email}", request.Email);
 
         var user = await unitOfWork.Users.GetByEmailAsync(request.Email);
 
         if (user == null || !VerifyPassword(request.Password, user.Password))
         {
-            logger.LogWarning("Невдала спроба аутентифікації для email: {Email}", request.Email);
+            logger.LogWarning("Failed authentication attempt for email: {Email}", request.Email);
             return null;
         }
 
-        logger.LogInformation("Успішна аутентифікація користувача: {Username} ({Email})",
+        logger.LogInformation("Successful authentication for user: {Username} ({Email})",
             user.Username, user.Email);
 
         return await GenerateAuthenticationResponseAsync(user);
@@ -34,17 +34,17 @@ public class AuthService(
 
     public async Task<AuthenticationResponse?> RegisterAsync(RegisterUserRequest request)
     {
-        logger.LogInformation("Спроба реєстрації нового користувача: {Email}", request.Email);
+        logger.LogInformation("Registration attempt for new user: {Email}", request.Email);
 
-        // Перевірка, чи існує користувач з таким email
+        // Check if user with this email already exists
         var existingUser = await unitOfWork.Users.GetByEmailAsync(request.Email);
         if (existingUser != null)
         {
-            logger.LogWarning("Спроба реєстрації з існуючим email: {Email}", request.Email);
+            logger.LogWarning("Registration attempt with existing email: {Email}", request.Email);
             return null;
         }
 
-        // Створення нового користувача
+        // Create new user
         var newUser = new User
         {
             Username = request.Username,
@@ -56,7 +56,7 @@ public class AuthService(
         await unitOfWork.Users.AddAsync(newUser);
         await unitOfWork.CompleteAsync();
 
-        logger.LogInformation("Успішна реєстрація користувача: {Username} ({Email})",
+        logger.LogInformation("Successful registration for user: {Username} ({Email})",
             newUser.Username, newUser.Email);
 
         return await GenerateAuthenticationResponseAsync(newUser);
@@ -64,7 +64,7 @@ public class AuthService(
 
     public async Task<AuthenticationResponse?> RefreshTokenAsync(string refreshToken)
     {
-        logger.LogInformation("Спроба оновлення токена");
+        logger.LogInformation("Token refresh attempt");
 
         var storedToken = await unitOfWork.RefreshTokens.GetByTokenWithUserAsync(refreshToken);
 
@@ -74,31 +74,31 @@ public class AuthService(
             storedToken.ExpiryDate < DateTime.UtcNow ||
             storedToken.User == null)
         {
-            logger.LogWarning("Невдала спроба оновлення токена: токен недійсний або прострочений");
+            logger.LogWarning("Failed token refresh attempt: token is invalid or expired");
             return null;
         }
 
-        // Позначаємо старий токен як використаний
+        // Mark old token as used
         storedToken.IsUsed = true;
         unitOfWork.RefreshTokens.Update(storedToken);
         await unitOfWork.CompleteAsync();
 
-        logger.LogInformation("Успішне оновлення токена для користувача: {Email}",
+        logger.LogInformation("Successful token refresh for user: {Email}",
             storedToken.User.Email);
 
-        // Генеруємо новий токен та відповідь
+        // Generate new token and response
         return await GenerateAuthenticationResponseAsync(storedToken.User);
     }
 
     public async Task<bool> RevokeTokenAsync(string refreshToken)
     {
-        logger.LogInformation("Спроба відкликання токена");
+        logger.LogInformation("Token revocation attempt");
 
         var storedToken = await unitOfWork.RefreshTokens.GetByTokenAsync(refreshToken);
 
         if (storedToken == null)
         {
-            logger.LogWarning("Спроба відкликання неіснуючого токена");
+            logger.LogWarning("Attempt to revoke non-existent token");
             return false;
         }
 
@@ -106,7 +106,7 @@ public class AuthService(
         unitOfWork.RefreshTokens.Update(storedToken);
         await unitOfWork.CompleteAsync();
 
-        logger.LogInformation("Токен успішно відкликано для користувача ID: {UserId}",
+        logger.LogInformation("Token successfully revoked for user ID: {UserId}",
             storedToken.UserId);
 
         return true;
@@ -135,7 +135,7 @@ public class AuthService(
         var token = jwtService.GenerateJwtToken(user);
         var refreshToken = jwtService.GenerateRefreshToken(user);
 
-        // Зберігаємо токен оновлення в базі даних через Unit of Work
+        // Save refresh token to database through Unit of Work
         await unitOfWork.RefreshTokens.AddAsync(refreshToken);
         await unitOfWork.CompleteAsync();
 

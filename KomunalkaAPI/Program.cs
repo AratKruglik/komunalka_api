@@ -17,7 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 Env.Load();
 
-// Налаштування Serilog
+// Configure Serilog
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
@@ -54,7 +54,7 @@ builder.Services.AddCors(options =>
         }
         else if (builder.Environment.IsDevelopment())
         {
-            // Дозволити все в Development (якщо не вказано конкретні origins)
+            // Allow everything in Development (if no specific origins specified)
             policy.AllowAnyOrigin()
                   .AllowAnyMethod()
                   .AllowAnyHeader();
@@ -104,7 +104,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    // Вимагати HTTPS в Production, дозволити HTTP в Development
+    // Require HTTPS in Production, allow HTTP in Development
     options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
@@ -170,7 +170,7 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 
-    // Додаємо XML документацію
+    // Add XML documentation
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
@@ -190,7 +190,7 @@ app.Urls.Add($"https://localhost:{httpsPort}");
 
 // Configure the HTTP request pipeline.
 
-// Глобальний обробник винятків (повинен бути першим)
+// Global exception handler (must be first)
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -201,13 +201,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Rate Limiting повинен бути одним з перших
+// Rate Limiting should be one of the first
 app.UseIpRateLimiting();
 
-// CORS повинен бути перед Authentication та Authorization
+// CORS must be before Authentication and Authorization
 app.UseCors("CorsPolicy");
 
-// Додавання middleware аутентифікації перед авторизацією
+// Add authentication middleware before authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -217,7 +217,7 @@ app.MapControllers();
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/health/ready");
 
-// Виконуємо сід даних
+// Execute seed data
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();

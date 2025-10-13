@@ -6,7 +6,7 @@ public static class SeedData
 {
     public static async Task SeedAsync(ApplicationDbContext context)
     {
-        // Сід для областей України
+        // Seed data for Ukrainian regions
         if (!context.Regions.Any())
         {
             var regions = new List<Region>
@@ -42,14 +42,14 @@ public static class SeedData
             await context.Regions.AddRangeAsync(regions);
         }
 
-        // Сід для типів адрес
+        // Seed data for address types
         if (!context.AddressTypes.Any())
         {
             var addressTypes = new List<AddressType>
             {
-                new() { Name = "Квартира", Description = "Житлове приміщення в багатоквартирному будинку", Icon = "BuildingOffice2Icon" },
-                new() { Name = "Приватний будинок", Description = "Окремостоячий житловий будинок", Icon = "HomeIcon" },
-                new() { Name = "Офіс", Description = "Комерційне приміщення для ведення бізнесу", Icon = "BuildingOfficeIcon" }
+                new() { Name = "Apartment", Description = "Residential unit in a multi-unit building", Icon = "BuildingOffice2Icon" },
+                new() { Name = "Private House", Description = "Detached residential building", Icon = "HomeIcon" },
+                new() { Name = "Office", Description = "Commercial space for business operations", Icon = "BuildingOfficeIcon" }
             };
 
             await context.AddressTypes.AddRangeAsync(addressTypes);

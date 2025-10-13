@@ -5,13 +5,13 @@ using KomunalkaAPI.Models;
 namespace KomunalkaAPI.Mapping;
 
 /// <summary>
-/// Профіль AutoMapper для маппінгу моделей на DTO
+/// AutoMapper profile for mapping models to DTOs
 /// </summary>
 public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        // Address маппінги
+        // Address mappings
         CreateMap<Address, AddressDto>()
             .ForMember(dest => dest.Region, opt => opt.MapFrom(src => src.Region))
             .ForMember(dest => dest.AddressType, opt => opt.MapFrom(src => src.AddressType));
@@ -24,13 +24,13 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore());
 
-        // Region маппінги
+        // Region mappings
         CreateMap<Region, RegionDto>();
 
-        // AddressType маппінги
+        // AddressType mappings
         CreateMap<AddressType, AddressTypeDto>();
 
-        // Currency маппінги
+        // Currency mappings
         CreateMap<Currency, CurrencyDto>();
         CreateMap<CreateCurrencyDto, Currency>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
@@ -41,7 +41,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow));
 
-        // User маппінги
+        // User mappings
         CreateMap<User, UserDto>();
     }
 }

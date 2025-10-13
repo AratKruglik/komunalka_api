@@ -19,7 +19,7 @@ public class AddressTypeController(IUnitOfWork unitOfWork) : ControllerBase
 
         if (!addressTypeList.Any())
         {
-            return NotFound("Типи адрес не знайдено");
+            return NotFound("Address types not found");
         }
 
         await unitOfWork.CompleteAsync();
@@ -44,7 +44,7 @@ public class AddressTypeController(IUnitOfWork unitOfWork) : ControllerBase
 
         if (addressType == null)
         {
-            return NotFound("Тип адреси не знайдено");
+            return NotFound("Address type not found");
         }
 
         await unitOfWork.CompleteAsync();

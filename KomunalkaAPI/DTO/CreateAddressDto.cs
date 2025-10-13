@@ -4,34 +4,34 @@ namespace KomunalkaAPI.DTO;
 
 public class CreateAddressDto
 {
-    [Required(ErrorMessage = "Поле 'Область' є обов'язковим")]
+    [Required(ErrorMessage = "Region is required")]
     public int RegionId { get; set; }
 
-    [Required(ErrorMessage = "Поле 'Місто' є обов'язковим")]
-    [StringLength(100, ErrorMessage = "Назва міста не може перевищувати 100 символів")]
+    [Required(ErrorMessage = "City is required")]
+    [StringLength(100, ErrorMessage = "City name cannot exceed 100 characters")]
     public required string City { get; set; }
 
-    [Required(ErrorMessage = "Поле 'Вулиця' є обов'язковим")]
-    [StringLength(200, ErrorMessage = "Назва вулиці не може перевищувати 200 символів")]
+    [Required(ErrorMessage = "Street is required")]
+    [StringLength(200, ErrorMessage = "Street name cannot exceed 200 characters")]
     public required string Street { get; set; }
 
-    [Required(ErrorMessage = "Поле 'Номер будинку' є обов'язковим")]
-    [StringLength(20, ErrorMessage = "Номер будинку не може перевищувати 20 символів")]
+    [Required(ErrorMessage = "Building number is required")]
+    [StringLength(20, ErrorMessage = "Building number cannot exceed 20 characters")]
     public required string BuildingNumber { get; set; }
 
-    [StringLength(20, ErrorMessage = "Номер квартири/офісу не може перевищувати 20 символів")]
+    [StringLength(20, ErrorMessage = "Apartment number cannot exceed 20 characters")]
     public string? ApartmentNumber { get; set; }
 
-    [Required(ErrorMessage = "Поле 'Поштовий індекс' є обов'язковим")]
-    [StringLength(5, MinimumLength = 5, ErrorMessage = "Поштовий індекс має складатися з 5 символів")]
-    [RegularExpression(@"^\d{5}$", ErrorMessage = "Поштовий індекс має містити тільки 5 цифр")]
+    [Required(ErrorMessage = "Zip code is required")]
+    [StringLength(5, MinimumLength = 5, ErrorMessage = "Zip code must be exactly 5 characters")]
+    [RegularExpression(@"^\d{5}$", ErrorMessage = "Zip code must contain only 5 digits")]
     public required string ZipCode { get; set; }
 
-    [StringLength(500, ErrorMessage = "Примітки не можуть перевищувати 500 символів")]
+    [StringLength(500, ErrorMessage = "Notes cannot exceed 500 characters")]
     public string? Notes { get; set; }
 
     public bool IsPrimary { get; set; }
 
-    [Required(ErrorMessage = "Поле 'Тип адреси' є обов'язковим")]
+    [Required(ErrorMessage = "Address type is required")]
     public int AddressTypeId { get; set; }
 }

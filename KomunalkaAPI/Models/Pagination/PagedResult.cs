@@ -1,43 +1,43 @@
 namespace KomunalkaAPI.Models.Pagination;
 
 /// <summary>
-/// Результат запиту з пагінацією
+/// Paginated query result
 /// </summary>
-/// <typeparam name="T">Тип елементів</typeparam>
+/// <typeparam name="T">Type of items</typeparam>
 public class PagedResult<T>
 {
     /// <summary>
-    /// Список елементів на поточній сторінці
+    /// List of items on the current page
     /// </summary>
     public List<T> Items { get; set; } = new();
 
     /// <summary>
-    /// Поточна сторінка (починається з 1)
+    /// Current page (starts from 1)
     /// </summary>
     public int PageNumber { get; set; }
 
     /// <summary>
-    /// Кількість елементів на сторінці
+    /// Number of items per page
     /// </summary>
     public int PageSize { get; set; }
 
     /// <summary>
-    /// Загальна кількість елементів
+    /// Total count of items
     /// </summary>
     public int TotalCount { get; set; }
 
     /// <summary>
-    /// Загальна кількість сторінок
+    /// Total number of pages
     /// </summary>
     public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
 
     /// <summary>
-    /// Чи є попередня сторінка
+    /// Whether there is a previous page
     /// </summary>
     public bool HasPrevious => PageNumber > 1;
 
     /// <summary>
-    /// Чи є наступна сторінка
+    /// Whether there is a next page
     /// </summary>
     public bool HasNext => PageNumber < TotalPages;
 }

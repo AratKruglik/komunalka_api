@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace KomunalkaAPI.Models;
 
 /// <summary>
-/// Тип комунальної послуги (електроенергія, газ, вода тощо)
+/// Utility service type (electricity, gas, water, etc.)
 /// </summary>
 [Table("utility_types")]
 public class UtilityType

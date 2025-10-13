@@ -2,13 +2,13 @@ namespace KomunalkaAPI.Models.Responses;
 
 /// <summary>
 /// API response wrapper (Laravel-compatible format)
-/// Використовується для wrapping даних у форматі Laravel API Resources
+/// Used for wrapping data in Laravel API Resources format
 /// </summary>
-/// <typeparam name="T">Тип даних</typeparam>
+/// <typeparam name="T">Data type</typeparam>
 public class ApiResponse<T>
 {
     /// <summary>
-    /// Основні дані ресурсу
+    /// Resource data
     /// </summary>
     public T Data { get; set; } = default!;
 }

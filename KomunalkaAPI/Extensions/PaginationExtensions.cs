@@ -5,12 +5,12 @@ using Microsoft.AspNetCore.Http;
 namespace KomunalkaAPI.Extensions;
 
 /// <summary>
-/// Extension methods для конвертації пагінації у Laravel-compatible format
+/// Extension methods for converting pagination to Laravel-compatible format
 /// </summary>
 public static class PaginationExtensions
 {
     /// <summary>
-    /// Конвертує PagedResult у paginated response (Laravel-compatible format)
+    /// Converts PagedResult to paginated response (Laravel-compatible format)
     /// </summary>
     public static PaginatedResponse<TDto> ToPaginatedResponse<TEntity, TDto>(
         this PagedResult<TEntity> pagedResult,
@@ -43,7 +43,7 @@ public static class PaginationExtensions
     }
 
     /// <summary>
-    /// Конвертує PagedResult у paginated response з автоматичним маппінгом
+    /// Converts PagedResult to paginated response with automatic mapping
     /// </summary>
     public static PaginatedResponse<T> ToPaginatedResponse<T>(
         this PagedResult<T> pagedResult,

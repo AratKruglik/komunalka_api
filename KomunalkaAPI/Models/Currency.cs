@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace KomunalkaAPI.Models;
 
 /// <summary>
-/// Валюта для тарифів
+/// Currency for tariffs
 /// </summary>
 [Table("currencies")]
 public class Currency

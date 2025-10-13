@@ -19,7 +19,7 @@ public class RegionController(IUnitOfWork unitOfWork) : ControllerBase
 
         if (!regionList.Any())
         {
-            return NotFound("Області не знайдено");
+            return NotFound("Regions not found");
         }
 
         var regionDtos = regionList.Select(region => new RegionDto
@@ -40,7 +40,7 @@ public class RegionController(IUnitOfWork unitOfWork) : ControllerBase
 
         if (region == null)
         {
-            return NotFound("Область не знайдено");
+            return NotFound("Region not found");
         }
 
         var regionDto = new RegionDto

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 namespace KomunalkaAPI.Repositories.RefreshToken;
 
 /// <summary>
-/// Репозиторій для роботи з токенами оновлення
+/// Repository for working with refresh tokens
 /// </summary>
 public class RefreshTokenRepository(DbContext context)
     : Repository<Models.RefreshToken>(context), IRefreshTokenRepository

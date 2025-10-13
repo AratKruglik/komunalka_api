@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace KomunalkaAPI.Models;
 
 /// <summary>
-/// Лічильник комунальних послуг
+/// Utility service meter
 /// </summary>
 [Table("meters")]
 public class Meter

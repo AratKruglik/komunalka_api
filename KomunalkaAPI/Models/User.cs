@@ -9,22 +9,22 @@ public class User
     [Key]
     public int Id { get; set; }
 
-    [Required(ErrorMessage = "Ім'я користувача обов'язкове")]
-    [StringLength(100, MinimumLength = 3, ErrorMessage = "Ім'я користувача повинно бути від 3 до 100 символів")]
+    [Required(ErrorMessage = "Username is required")]
+    [StringLength(100, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 100 characters")]
     public required string Username { get; set; }
 
-    [Required(ErrorMessage = "Пароль обов'язковий")]
-    [StringLength(500, ErrorMessage = "Пароль занадто довгий")]
+    [Required(ErrorMessage = "Password is required")]
+    [StringLength(500, ErrorMessage = "Password is too long")]
     public required string Password { get; set; }
 
-    [Required(ErrorMessage = "Email обов'язковий")]
-    [EmailAddress(ErrorMessage = "Невірний формат email")]
-    [StringLength(255, ErrorMessage = "Email занадто довгий")]
+    [Required(ErrorMessage = "Email is required")]
+    [EmailAddress(ErrorMessage = "Invalid email format")]
+    [StringLength(255, ErrorMessage = "Email is too long")]
     public required string Email { get; set; }
 
     public List<Address>? Addresses { get; set; }
 
-    [StringLength(50, ErrorMessage = "Роль занадто довга")]
+    [StringLength(50, ErrorMessage = "Role is too long")]
     public string? Role { get; set; } = "User";
 
     public List<RefreshToken>? RefreshTokens { get; set; }

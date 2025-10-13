@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace KomunalkaAPI.Middleware;
 
 /// <summary>
-/// Middleware для централізованої обробки винятків
+/// Middleware for centralized exception handling
 /// </summary>
 public class ExceptionHandlerMiddleware
 {
@@ -32,7 +32,7 @@ public class ExceptionHandlerMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Необроблений виняток: {Message}", ex.Message);
+            _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -51,13 +51,13 @@ public class ExceptionHandlerMiddleware
         {
             case UnauthorizedAccessException:
                 response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                response.Message = "Доступ заборонено";
+                response.Message = "Access denied";
                 context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 break;
 
             case KeyNotFoundException:
                 response.StatusCode = (int)HttpStatusCode.NotFound;
-                response.Message = "Ресурс не знайдено";
+                response.Message = "Resource not found";
                 context.Response.StatusCode = (int)HttpStatusCode.NotFound;
                 break;
 
@@ -70,10 +70,10 @@ public class ExceptionHandlerMiddleware
 
             case DbUpdateException dbEx:
                 response.StatusCode = (int)HttpStatusCode.Conflict;
-                response.Message = "Помилка при оновленні бази даних";
+                response.Message = "Database update error";
                 context.Response.StatusCode = (int)HttpStatusCode.Conflict;
 
-                // Додаємо детальну інформацію тільки в Development
+                // Add detailed information only in Development
                 if (_environment.IsDevelopment())
                 {
                     response.Details = dbEx.InnerException?.Message ?? dbEx.Message;
@@ -88,10 +88,10 @@ public class ExceptionHandlerMiddleware
 
             default:
                 response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                response.Message = "Внутрішня помилка сервера";
+                response.Message = "Internal server error";
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
-                // Додаємо детальну інформацію тільки в Development
+                // Add detailed information only in Development
                 if (_environment.IsDevelopment())
                 {
                     response.Details = exception.ToString();
