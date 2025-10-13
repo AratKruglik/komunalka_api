@@ -29,6 +29,7 @@ public class CurrencyController(IUnitOfWork unitOfWork) : ControllerBase
         var currencyDtos = currencyList.Select(currency => new CurrencyDto
         {
             Id = currency.Id,
+            Code = currency.Code,
             Name = currency.Name,
             Symbol = currency.Symbol,
             CreatedAt = currency.CreatedAt,
@@ -52,6 +53,7 @@ public class CurrencyController(IUnitOfWork unitOfWork) : ControllerBase
         var currencyDto = new CurrencyDto
         {
             Id = currency.Id,
+            Code = currency.Code,
             Name = currency.Name,
             Symbol = currency.Symbol,
             CreatedAt = currency.CreatedAt,
@@ -67,6 +69,7 @@ public class CurrencyController(IUnitOfWork unitOfWork) : ControllerBase
     {
         var currency = new Currency
         {
+            Code = createCurrencyDto.Code,
             Name = createCurrencyDto.Name,
             Symbol = createCurrencyDto.Symbol,
             CreatedAt = DateTime.UtcNow,
@@ -80,6 +83,7 @@ public class CurrencyController(IUnitOfWork unitOfWork) : ControllerBase
         var currencyDto = new CurrencyDto
         {
             Id = createdCurrency.Id,
+            Code = createdCurrency.Code,
             Name = createdCurrency.Name,
             Symbol = createdCurrency.Symbol,
             CreatedAt = createdCurrency.CreatedAt,
@@ -109,6 +113,7 @@ public class CurrencyController(IUnitOfWork unitOfWork) : ControllerBase
         var updatedCurrencyDto = new CurrencyDto
         {
             Id = currency.Id,
+            Code = currency.Code,
             Name = currency.Name,
             Symbol = currency.Symbol,
             CreatedAt = currency.CreatedAt,

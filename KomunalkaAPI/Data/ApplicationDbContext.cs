@@ -17,5 +17,7 @@ namespace KomunalkaAPI.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Region> Regions { get; set; }
         public DbSet<AddressType> AddressTypes { get; set; }
+        public DbSet<UtilityType> UtilityTypes { get; set; }
+        public DbSet<Meter> Meters { get; set; }
     }
 }

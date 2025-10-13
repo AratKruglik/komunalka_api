@@ -1,5 +1,7 @@
 using AutoMapper;
+using KomunalkaAPI.Extensions;
 using KomunalkaAPI.Models.Pagination;
+using KomunalkaAPI.Models.Responses;
 using KomunalkaAPI.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using KomunalkaAPI.Models;
@@ -16,7 +18,7 @@ namespace KomunalkaAPI.Controllers;
 public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : ControllerBase
 {
     [HttpGet(Name = "addresses")]
-    public async Task<ActionResult<PagedResult<AddressDto>>> GetAll([FromQuery] PaginationParams paginationParams)
+    public async Task<ActionResult<PaginatedResponse<AddressDto>>> GetAll([FromQuery] PaginationParams paginationParams)
     {
         // Отримуємо ID поточного користувача з JWT токена
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
@@ -32,7 +34,7 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
         var userAddresses = pagedAddresses.Items.Where(a => a.UserId == userId).ToList();
         var addressDtos = mapper.Map<List<AddressDto>>(userAddresses);
 
-        var result = new PagedResult<AddressDto>
+        var pagedResult = new PagedResult<AddressDto>
         {
             Items = addressDtos,
             PageNumber = pagedAddresses.PageNumber,
@@ -40,7 +42,10 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
             TotalCount = pagedAddresses.Items.Count(a => a.UserId == userId) // Кількість адрес користувача
         };
 
-        return Ok(result);
+        // Конвертуємо у Laravel-compatible format
+        var response = pagedResult.ToPaginatedResponse(addressDtos, Request);
+
+        return Ok(response);
     }
 
     [HttpGet("{id:int}", Name = "address")]
