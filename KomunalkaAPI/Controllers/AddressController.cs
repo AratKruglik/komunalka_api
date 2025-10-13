@@ -1,3 +1,5 @@
+using AutoMapper;
+using KomunalkaAPI.Models.Pagination;
 using KomunalkaAPI.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using KomunalkaAPI.Models;
@@ -8,12 +10,13 @@ using System.Security.Claims;
 namespace KomunalkaAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
+[Asp.Versioning.ApiVersion("1.0")]
 [Authorize]
-public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
+public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : ControllerBase
 {
     [HttpGet(Name = "addresses")]
-    public async Task<ActionResult<IEnumerable<AddressDto>>> GetAll()
+    public async Task<ActionResult<PagedResult<AddressDto>>> GetAll([FromQuery] PaginationParams paginationParams)
     {
         // Отримуємо ID поточного користувача з JWT токена
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
@@ -22,42 +25,22 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
             return Unauthorized("Невійсний токен користувача");
         }
 
-        var addresses = await unitOfWork.Addresses.GetAllAsync();
+        // Отримуємо всі адреси з пагінацією
+        var pagedAddresses = await unitOfWork.Addresses.GetPagedAsync(paginationParams);
+
         // Фільтруємо адреси лише для поточного користувача
-        IEnumerable<Address> addressList = addresses.Where(a => a.UserId == userId).ToList();
+        var userAddresses = pagedAddresses.Items.Where(a => a.UserId == userId).ToList();
+        var addressDtos = mapper.Map<List<AddressDto>>(userAddresses);
 
-        if (!addressList.Any())
+        var result = new PagedResult<AddressDto>
         {
-            return NotFound("У вас ще немає збережених адрес");
-        }
+            Items = addressDtos,
+            PageNumber = pagedAddresses.PageNumber,
+            PageSize = pagedAddresses.PageSize,
+            TotalCount = pagedAddresses.Items.Count(a => a.UserId == userId) // Кількість адрес користувача
+        };
 
-        var addressDtos = addressList.Select(address => new AddressDto
-        {
-            Id = address.Id,
-            UserId = address.UserId,
-            RegionId = address.RegionId,
-            ZipCode = address.ZipCode,
-            City = address.City,
-            Street = address.Street,
-            BuildingNumber = address.BuildingNumber,
-            ApartmentNumber = address.ApartmentNumber,
-            Notes = address.Notes,
-            IsPrimary = address.IsPrimary,
-            AddressTypeId = address.AddressTypeId,
-            // User = address.User,
-            Region = address.Region != null ? new RegionDto
-            {
-                Id = address.Region.Id,
-                Name = address.Region.Name,
-                CreatedAt = address.Region.CreatedAt,
-                UpdatedAt = address.Region.UpdatedAt
-            } : null,
-            AddressType = address.AddressType,
-            CreatedAt = address.CreatedAt,
-            UpdatedAt = address.UpdatedAt
-        }).ToList();
-
-        return Ok(addressDtos);
+        return Ok(result);
     }
 
     [HttpGet("{id:int}", Name = "address")]
@@ -83,31 +66,7 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
             return Forbid("У вас немає доступу до цієї адреси");
         }
 
-        var addressDto = new AddressDto
-        {
-            Id = address.Id,
-            UserId = address.UserId,
-            RegionId = address.RegionId,
-            ZipCode = address.ZipCode,
-            City = address.City,
-            Street = address.Street,
-            BuildingNumber = address.BuildingNumber,
-            ApartmentNumber = address.ApartmentNumber,
-            Notes = address.Notes,
-            IsPrimary = address.IsPrimary,
-            AddressTypeId = address.AddressTypeId,
-            // User = address.User,
-            Region = address.Region != null ? new RegionDto
-            {
-                Id = address.Region.Id,
-                Name = address.Region.Name,
-                CreatedAt = address.Region.CreatedAt,
-                UpdatedAt = address.Region.UpdatedAt
-            } : null,
-            AddressType = address.AddressType,
-            CreatedAt = address.CreatedAt,
-            UpdatedAt = address.UpdatedAt
-        };
+        var addressDto = mapper.Map<AddressDto>(address);
 
         return Ok(addressDto);
     }
@@ -152,51 +111,17 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
             }
         }
 
-        var address = new Address
-        {
-            UserId = userId,
-            RegionId = createAddressDto.RegionId,
-            City = createAddressDto.City,
-            Street = createAddressDto.Street,
-            BuildingNumber = createAddressDto.BuildingNumber,
-            ApartmentNumber = createAddressDto.ApartmentNumber,
-            ZipCode = createAddressDto.ZipCode,
-            Notes = createAddressDto.Notes,
-            IsPrimary = createAddressDto.IsPrimary,
-            AddressTypeId = createAddressDto.AddressTypeId,
-            User = null!, // Буде заповнено EF
-            Region = region,
-            AddressType = addressType
-        };
+        var address = mapper.Map<Address>(createAddressDto);
+        address.UserId = userId;
+        address.User = null!; // Буде заповнено EF
+        address.Region = region;
+        address.AddressType = addressType;
 
         var entityEntry = await unitOfWork.Addresses.AddAsync(address);
         await unitOfWork.CompleteAsync();
 
         var createdAddress = entityEntry.Entity;
-        var createdAddressDto = new AddressDto
-        {
-            Id = createdAddress.Id,
-            UserId = createdAddress.UserId,
-            RegionId = createdAddress.RegionId,
-            City = createdAddress.City,
-            Street = createdAddress.Street,
-            BuildingNumber = createdAddress.BuildingNumber,
-            ApartmentNumber = createdAddress.ApartmentNumber,
-            ZipCode = createdAddress.ZipCode,
-            Notes = createdAddress.Notes,
-            IsPrimary = createdAddress.IsPrimary,
-            AddressTypeId = createdAddress.AddressTypeId,
-            Region = createdAddress.Region != null ? new RegionDto
-            {
-                Id = createdAddress.Region.Id,
-                Name = createdAddress.Region.Name,
-                CreatedAt = createdAddress.Region.CreatedAt,
-                UpdatedAt = createdAddress.Region.UpdatedAt
-            } : null,
-            AddressType = createdAddress.AddressType,
-            CreatedAt = createdAddress.CreatedAt,
-            UpdatedAt = createdAddress.UpdatedAt
-        };
+        var createdAddressDto = mapper.Map<AddressDto>(createdAddress);
 
         return CreatedAtRoute("address", new { id = createdAddressDto.Id }, createdAddressDto);
     }
@@ -225,36 +150,14 @@ public class AddressController(IUnitOfWork unitOfWork) : ControllerBase
         }
 
         // Не дозволяємо змінювати UserId - адреса завжди належить поточному користувачу
-        address.RegionId = addressDto.RegionId;
-        address.ZipCode = addressDto.ZipCode;
-        address.City = addressDto.City;
-        address.Street = addressDto.Street;
-        address.BuildingNumber = addressDto.BuildingNumber;
-        address.ApartmentNumber = addressDto.ApartmentNumber;
-        address.Notes = addressDto.Notes;
-        address.IsPrimary = addressDto.IsPrimary;
-        address.AddressTypeId = addressDto.AddressTypeId;
+        mapper.Map(addressDto, address);
+        address.UserId = userId; // Гарантуємо, що UserId не змінюється
         address.UpdatedAt = DateTime.UtcNow;
 
         unitOfWork.Addresses.Update(address);
         await unitOfWork.CompleteAsync();
 
-        var updatedAddressDto = new AddressDto
-        {
-            Id = address.Id,
-            UserId = address.UserId,
-            RegionId = address.RegionId,
-            ZipCode = address.ZipCode,
-            City = address.City,
-            Street = address.Street,
-            BuildingNumber = address.BuildingNumber,
-            ApartmentNumber = address.ApartmentNumber,
-            Notes = address.Notes,
-            IsPrimary = address.IsPrimary,
-            AddressTypeId = address.AddressTypeId,
-            CreatedAt = address.CreatedAt,
-            UpdatedAt = address.UpdatedAt,
-        };
+        var updatedAddressDto = mapper.Map<AddressDto>(address);
 
         return Ok(updatedAddressDto);
     }

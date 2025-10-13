@@ -10,7 +10,8 @@ using System.Threading.Tasks;
 namespace KomunalkaAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
+[Asp.Versioning.ApiVersion("1.0")]
 public class CurrencyController(IUnitOfWork unitOfWork) : ControllerBase
 {
     // GET: api/Currency

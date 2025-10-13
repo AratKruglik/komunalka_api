@@ -7,7 +7,8 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 namespace KomunalkaAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
+[Asp.Versioning.ApiVersion("1.0")]
 public class UsersController(IUnitOfWork unitOfWork) : ControllerBase
 {
     [HttpGet(Name = "users")]

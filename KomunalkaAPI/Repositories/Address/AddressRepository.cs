@@ -11,6 +11,8 @@ public class AddressRepository(DbContext context) : Repository<Address>(context)
     {
         return await _dbSet
             .Include(a => a.User)
+            .Include(a => a.Region)
+            .Include(a => a.AddressType)
             .Where(a => a.DeletedAt == null)
             .ToListAsync();
     }
@@ -19,14 +21,18 @@ public class AddressRepository(DbContext context) : Repository<Address>(context)
     {
         return await _dbSet
             .Include(a => a.User)
+            .Include(a => a.Region)
+            .Include(a => a.AddressType)
             .Where(a => a.DeletedAt == null)
             .FirstOrDefaultAsync(address => address.Id == id);
     }
-    
+
     public async Task<IEnumerable<Address>> GetWithDeletedAsync()
     {
         return await _dbSet
             .Include(a => a.User)
+            .Include(a => a.Region)
+            .Include(a => a.AddressType)
             .ToListAsync();
     }
 

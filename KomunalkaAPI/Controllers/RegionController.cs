@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace KomunalkaAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
+[Asp.Versioning.ApiVersion("1.0")]
 [Authorize]
 public class RegionController(IUnitOfWork unitOfWork) : ControllerBase
 {
