@@ -26,7 +26,7 @@ public class AddressRepository(DbContext context) : Repository<Address>(context)
             .Where(a => a.DeletedAt == null)
             .FirstOrDefaultAsync(address => address.Id == id);
     }
-    
+
     public async Task<IEnumerable<Address>> GetWithDeletedAsync()
     {
         return await _dbSet

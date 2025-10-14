@@ -1,68 +1,165 @@
 using KomunalkaAPI.DTO;
-using KomunalkaAPI.Services.Users;
+using KomunalkaAPI.Models;
+using KomunalkaAPI.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KomunalkaAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class UsersController(IUserService userService) : ControllerBase
+[Route("api/v{version:apiVersion}/[controller]")]
+[Asp.Versioning.ApiVersion("1.0")]
+public class UsersController(IUnitOfWork unitOfWork) : ControllerBase
 {
     [HttpGet(Name = "users")]
-    public async Task<ActionResult<ApiResponse<List<UserDto>>>> GetAll()
+    public async Task<ActionResult<UserDto>> GetAll()
     {
-        var users = await userService.GetAllAsync();
-        if (!users.Any())
+        var users = await unitOfWork.Users.GetAllAsync();
+        IEnumerable<User> userList = users.ToList();
+        
+        if (!userList.Any())
         {
-            return NotFound(ApiResponse<List<UserDto>>.Fail(new[] { "Users not found" }, "Not Found"));
+            return NotFound();
         }
+        await unitOfWork.CompleteAsync();
 
-        return Ok(ApiResponse<List<UserDto>>.Success(users.ToList(), "Users retrieved"));
+        var userDtos = userList.Select(user => new UserDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            Addresses = user.Addresses?.Select(address => new AddressDto
+            {
+                Id = address.Id,
+                UserId = address.UserId,
+                RegionId = address.RegionId,
+                ZipCode = address.ZipCode,
+                City = address.City,
+                Street = address.Street,
+                BuildingNumber = address.BuildingNumber,
+                ApartmentNumber = address.ApartmentNumber,
+                Notes = address.Notes,
+                IsPrimary = address.IsPrimary,
+                AddressTypeId = address.AddressTypeId,
+                CreatedAt = address.CreatedAt,
+                UpdatedAt = address.UpdatedAt,
+                DeletedAt = address.DeletedAt
+            }).ToList(),
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt,
+        }).ToList();
+    
+        return Ok(userDtos);
     }
-
+    
     [HttpGet("{id:int}", Name = "user")]
-    public async Task<ActionResult<ApiResponse<UserDto>>> GetById(int id)
+    public async Task<ActionResult<UserDto>> GetById(int id)
     {
-        var result = await userService.GetByIdAsync(id);
-
-        if (result.NotFound)
+        var user = await unitOfWork.Users.GetByIdAsync(id);
+        
+        if (user == null)
         {
-            return NotFound(ApiResponse<UserDto>.Fail(new[] { "User not found" }, "Not Found"));
+            return NotFound();
         }
+        await unitOfWork.CompleteAsync();
 
-        return Ok(ApiResponse<UserDto>.Success(result.Data!, "User retrieved"));
+        var userDto = new UserDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            Addresses = user.Addresses?.Select(address => new AddressDto
+            {
+                Id = address.Id,
+                UserId = address.UserId,
+                RegionId = address.RegionId,
+                ZipCode = address.ZipCode,
+                City = address.City,
+                Street = address.Street,
+                BuildingNumber = address.BuildingNumber,
+                ApartmentNumber = address.ApartmentNumber,
+                Notes = address.Notes,
+                IsPrimary = address.IsPrimary,
+                AddressTypeId = address.AddressTypeId,
+                CreatedAt = address.CreatedAt,
+                UpdatedAt = address.UpdatedAt,
+                DeletedAt = address.DeletedAt
+            }).ToList(),
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt,
+        };
+        
+        return Ok(userDto);
     }
-
+    
     [HttpPost(Name = "createUser")]
-    public async Task<ActionResult<ApiResponse<UserDto>>> Create(UserDto userDto)
+    public async Task<ActionResult<UserDto>> Create(UserDto userDto)
     {
-        var createdUserDto = await userService.CreateAsync(userDto);
-        return CreatedAtRoute("user", new { id = createdUserDto.Id }, ApiResponse<UserDto>.Success(createdUserDto, "User created"));
+        var user = new User
+        {
+            Username = userDto.Username,
+            Password = userDto.Password ?? string.Empty,
+            Email = userDto.Email,
+        };
+        
+        var entityEntry = await unitOfWork.Users.AddAsync(user);
+        await unitOfWork.CompleteAsync();
+        
+        var createdUser = entityEntry.Entity;
+        var createdUserDto = new UserDto
+        {
+            Id = createdUser.Id,
+            Username = createdUser.Username,
+            Email = createdUser.Email,
+            CreatedAt = createdUser.CreatedAt,
+            UpdatedAt = createdUser.UpdatedAt,
+        };
+        
+        return CreatedAtRoute("user", new { id = createdUserDto.Id }, createdUserDto);
     }
-
+    
     [HttpPut("{id:int}", Name = "updateUser")]
-    public async Task<ActionResult<ApiResponse<UserDto>>> Update(int id, UserDto userDto)
+    public async Task<ActionResult<UserDto>> Update(int id, UserDto userDto)
     {
-        var result = await userService.UpdateAsync(id, userDto);
-
-        if (result.NotFound)
+        var user = await unitOfWork.Users.GetByIdAsync(id);
+        
+        if (user == null)
         {
-            return NotFound(ApiResponse<UserDto>.Fail(new[] { "User not found" }, "Not Found"));
+            return NotFound();
         }
 
-        return Ok(ApiResponse<UserDto>.Success(result.Data!, "Користувача оновлено"));
+        user.Username = userDto.Username;
+        user.Password = userDto.Password ?? user.Password;
+        user.Email = userDto.Email;
+        user.UpdatedAt = DateTime.UtcNow;
+        
+        unitOfWork.Users.Update(user);
+        await unitOfWork.CompleteAsync();
+        
+        var updatedUserDto = new UserDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt,
+        };
+        
+        return Ok(updatedUserDto);
     }
-
+    
     [HttpDelete("{id:int}", Name = "deleteUser")]
-    public async Task<ActionResult<ApiResponse<object>>> Delete(int id)
+    public async Task<ActionResult> Delete(int id)
     {
-        var result = await userService.DeleteAsync(id);
-
-        if (result.NotFound)
+        var user = await unitOfWork.Users.GetByIdAsync(id);
+        
+        if (user == null)
         {
-            return NotFound(ApiResponse<object>.Fail(new[] { "Користувача не знайдено" }, "Not Found"));
+            return NotFound();
         }
 
-        return Ok(ApiResponse<object>.Success(null, "Користувача видалено"));
+        unitOfWork.Users.Delete(user);
+        await unitOfWork.CompleteAsync();
+        
+        return NoContent();
     }
 }

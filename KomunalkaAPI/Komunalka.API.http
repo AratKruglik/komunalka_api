@@ -1,8 +1,13 @@
-@KomunalkaAPI_HostAddress = https://localhost:7095/api
+# Komunalka API HTTP Client
+# Base URLs for different environments
+@KomunalkaAPI_HostAddress = http://localhost:8080/api/v1
+# @KomunalkaAPI_HostAddress = http://localhost:5242/api/v1
+# @KomunalkaAPI_HostAddress = https://localhost:7095/api/v1
 
-# JWT Token variables (update these after login)
-@jwt_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0ZXN0KzNAZXhhbXBsZS5jb20iLCJqdGkiOiJhOTRmZDdiZS02NDg1LTQ1NjUtODkwOS05NWFiN2U4OGViYjUiLCJ1bmlxdWVfbmFtZSI6InRlc3R1c2VyIiwicm9sZSI6IlVzZXIiLCJuYmYiOjE3NTY4OTc1ODIsImV4cCI6MTc1Njg5OTM4MiwiaWF0IjoxNzU2ODk3NTgyLCJpc3MiOiJrb211bmFsa2EtYXBpIiwiYXVkIjoia29tdW5hbGthLWNsaWVudCJ9.u7HwaWHgMOX-iXd-Wwr7Ing0_4-tkVrk2cIIciJjH4Y
-@refresh_token = your_refresh_token_here
+# JWT Token variables (update these after successful login)
+# Example tokens from test user:
+@jwt_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwianRpIjoiNmY2MTE2ODgtNDJhYy00NGI2LTkyZmQtM2ZkZTE0YWZiNzJlIiwidW5pcXVlX25hbWUiOiJ0ZXN0dXNlciIsInJvbGUiOiJVc2VyIiwibmJmIjoxNzYwMzcxNDU1LCJleHAiOjE3NjAzNzMyNTUsImlhdCI6MTc2MDM3MTQ1NSwiaXNzIjoia29tdW5hbGthLWFwaSIsImF1ZCI6ImtvbXVuYWxrYS1jbGllbnQifQ.cbf2rFeZ52a6MtJUxY3Q-Qhe9yf7xXWWByHlqkgNUKU
+@refresh_token = c0YCDucdInwaIXd9V4fHnztbrgblXUFGAfOR4Qi5ssI=
 
 ### Authentication Endpoints
 
@@ -12,9 +17,9 @@ Content-Type: application/json
 
 {
   "username": "testuser",
-  "email": "test+3@example.com",
-  "password": "password123",
-  "confirmPassword": "password123"
+  "email": "test@example.com",
+  "password": "Password123",
+  "confirmPassword": "Password123"
 }
 
 ###
@@ -24,8 +29,8 @@ POST {{KomunalkaAPI_HostAddress}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "test+3@example.com",
-  "password": "password123"
+  "email": "test@example.com",
+  "password": "Password123"
 }
 
 ###
@@ -103,8 +108,8 @@ Authorization: Bearer {{jwt_token}}
 
 ### Address Management Endpoints
 
-# Get all addresses (requires authentication)
-GET {{KomunalkaAPI_HostAddress}}/address
+# Get all addresses with pagination (requires authentication)
+GET {{KomunalkaAPI_HostAddress}}/address?page=1&pageSize=10
 Accept: application/json
 Authorization: Bearer {{jwt_token}}
 
@@ -233,5 +238,55 @@ Authorization: Bearer {{jwt_token}}
 # Delete currency (requires authentication)
 DELETE {{KomunalkaAPI_HostAddress}}/currency/1
 Authorization: Bearer {{jwt_token}}
+
+###
+
+### Health Check Endpoints
+
+# Health check
+GET http://localhost:8080/health
+
+###
+
+# Ready check
+GET http://localhost:8080/health/ready
+
+###
+
+### Swagger Documentation
+
+# Swagger UI (Development only)
+# @name SwaggerUI
+# GET http://localhost:5242/swagger/index.html
+
+###
+
+### Notes
+#
+# API Versioning: All endpoints use v1 by default (/api/v1/...)
+#
+# Authentication:
+# - Most endpoints require JWT authentication via Bearer token
+# - Register a user first, then login to get JWT and refresh tokens
+# - Update jwt_token and refresh_token variables after login
+#
+# Docker URLs:
+# - API: http://localhost:8080
+# - Database: localhost:5432
+# - pgAdmin: http://localhost:5050 (login: admin at admin.com / admin)
+#
+# Local Development URLs:
+# - HTTP: http://localhost:5242
+# - HTTPS: https://localhost:7095
+# - Swagger: http://localhost:5242/swagger (Development only)
+#
+# Pagination:
+# - Address endpoint supports pagination with ?page=1&pageSize=10
+# - Returns Laravel-compatible format with data, links, and meta
+#
+# CORS:
+# - Configured to allow origins from environment variable
+# - Docker: allows all origins (*)
+# - Local: configure in .env file
 
 ###

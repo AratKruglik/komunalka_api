@@ -4,9 +4,10 @@ namespace KomunalkaAPI.DTO.Auth;
 
 public class AuthenticationRequest
 {
-    [Required]
+    [Required(ErrorMessage = "Email is required")]
+    [EmailAddress(ErrorMessage = "Invalid email format")]
     public required string Email { get; set; }
 
-    [Required]
+    [Required(ErrorMessage = "Password is required")]
     public required string Password { get; set; }
 }

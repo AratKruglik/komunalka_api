@@ -1,61 +1,137 @@
 using KomunalkaAPI.DTO;
-using KomunalkaAPI.Services.Currency;
+using KomunalkaAPI.Models;
+using KomunalkaAPI.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KomunalkaAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class CurrencyController(ICurrencyService currencyService) : ControllerBase
+[Route("api/v{version:apiVersion}/[controller]")]
+[Asp.Versioning.ApiVersion("1.0")]
+public class CurrencyController(IUnitOfWork unitOfWork) : ControllerBase
 {
+    // GET: api/Currency
     [HttpGet(Name = "currencies")]
-    public async Task<ActionResult<ApiResponse<List<CurrencyDto>>>> GetCurrencies()
+    public async Task<ActionResult<IEnumerable<CurrencyDto>>> GetCurrencies()
     {
-        var list = await currencyService.GetAllAsync();
-        if (!list.Any())
+        var currencies = await unitOfWork.Currencies.GetAllAsync();
+        IEnumerable<Currency> currencyList = currencies.ToList();
+
+        if (!currencyList.Any())
         {
-            return NotFound(ApiResponse<List<CurrencyDto>>.Fail(new[] { "Currencies not found" }, "Not Found"));
+            return NotFound();
         }
-        return Ok(ApiResponse<List<CurrencyDto>>.Success(list.ToList(), "Currencies retrieved"));
+
+        var currencyDtos = currencyList.Select(currency => new CurrencyDto
+        {
+            Id = currency.Id,
+            Code = currency.Code,
+            Name = currency.Name,
+            Symbol = currency.Symbol,
+            CreatedAt = currency.CreatedAt,
+            UpdatedAt = currency.UpdatedAt
+        }).ToList();
+
+        return Ok(currencyDtos);
     }
 
+    // GET: api/Currency/5
     [HttpGet("{id:int}", Name = "currency")]
-    public async Task<ActionResult<ApiResponse<CurrencyDto>>> GetCurrency(int id)
+    public async Task<ActionResult<CurrencyDto>> GetCurrency(int id)
     {
-        var result = await currencyService.GetByIdAsync(id);
-        if (result.NotFound)
+        var currency = await unitOfWork.Currencies.GetByIdAsync(id);
+
+        if (currency == null)
         {
-            return NotFound(ApiResponse<CurrencyDto>.Fail(new[] { "Currency not found" }, "Not Found"));
+            return NotFound();
         }
-        return Ok(ApiResponse<CurrencyDto>.Success(result.Data!, "Currency retrieved"));
+
+        var currencyDto = new CurrencyDto
+        {
+            Id = currency.Id,
+            Code = currency.Code,
+            Name = currency.Name,
+            Symbol = currency.Symbol,
+            CreatedAt = currency.CreatedAt,
+            UpdatedAt = currency.UpdatedAt
+        };
+
+        return Ok(currencyDto);
     }
 
+    // POST: api/Currency
     [HttpPost(Name = "createCurrency")]
-    public async Task<ActionResult<ApiResponse<CurrencyDto>>> CreateCurrency(CreateCurrencyDto createCurrencyDto)
+    public async Task<ActionResult<CurrencyDto>> CreateCurrency(CreateCurrencyDto createCurrencyDto)
     {
-        var currencyDto = await currencyService.CreateAsync(createCurrencyDto);
-        return CreatedAtRoute("currency", new { id = currencyDto.Id }, ApiResponse<CurrencyDto>.Success(currencyDto, "Currency created"));
+        var currency = new Currency
+        {
+            Code = createCurrencyDto.Code,
+            Name = createCurrencyDto.Name,
+            Symbol = createCurrencyDto.Symbol,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        var entityEntry = await unitOfWork.Currencies.AddAsync(currency);
+        await unitOfWork.CompleteAsync();
+
+        var createdCurrency = entityEntry.Entity;
+        var currencyDto = new CurrencyDto
+        {
+            Id = createdCurrency.Id,
+            Code = createdCurrency.Code,
+            Name = createdCurrency.Name,
+            Symbol = createdCurrency.Symbol,
+            CreatedAt = createdCurrency.CreatedAt,
+            UpdatedAt = createdCurrency.UpdatedAt
+        };
+
+        return CreatedAtRoute("currency", new { id = currencyDto.Id }, currencyDto);
     }
 
+    // PUT: api/Currency/5
     [HttpPut("{id:int}", Name = "updateCurrency")]
-    public async Task<ActionResult<ApiResponse<CurrencyDto>>> UpdateCurrency(int id, UpdateCurrencyDto updateCurrencyDto)
+    public async Task<ActionResult<CurrencyDto>> UpdateCurrency(int id, UpdateCurrencyDto updateCurrencyDto)
     {
-        var result = await currencyService.UpdateAsync(id, updateCurrencyDto);
-        if (result.NotFound)
+        var currency = await unitOfWork.Currencies.GetByIdAsync(id);
+        if (currency == null)
         {
-            return NotFound(ApiResponse<CurrencyDto>.Fail(new[] { "Currency not found" }, "Not Found"));
+            return NotFound();
         }
-        return Ok(ApiResponse<CurrencyDto>.Success(result.Data!, "Currency updated"));
+
+        currency.Name = updateCurrencyDto.Name;
+        currency.Symbol = updateCurrencyDto.Symbol;
+        currency.UpdatedAt = DateTime.UtcNow;
+
+        unitOfWork.Currencies.Update(currency);
+        await unitOfWork.CompleteAsync();
+
+        var updatedCurrencyDto = new CurrencyDto
+        {
+            Id = currency.Id,
+            Code = currency.Code,
+            Name = currency.Name,
+            Symbol = currency.Symbol,
+            CreatedAt = currency.CreatedAt,
+            UpdatedAt = currency.UpdatedAt
+        };
+
+        return Ok(updatedCurrencyDto);
     }
 
+    // DELETE: api/Currency/5
     [HttpDelete("{id:int}", Name = "deleteCurrency")]
-    public async Task<ActionResult<ApiResponse<object>>> DeleteCurrency(int id)
+    public async Task<IActionResult> DeleteCurrency(int id)
     {
-        var result = await currencyService.DeleteAsync(id);
-        if (result.NotFound)
+        var currency = await unitOfWork.Currencies.GetByIdAsync(id);
+        if (currency == null)
         {
-            return NotFound(ApiResponse<object>.Fail(new[] { "Currency not found" }, "Not Found"));
+            return NotFound();
         }
-        return Ok(ApiResponse<object>.Success(null, "Currency deleted"));
+
+        unitOfWork.Currencies.Delete(currency);
+        await unitOfWork.CompleteAsync();
+
+        return NoContent();
     }
 }

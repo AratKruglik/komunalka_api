@@ -1,3 +1,4 @@
+using KomunalkaAPI.Models.Pagination;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
@@ -16,6 +17,24 @@ public class Repository<T>(DbContext context) : IRepository<T> where T : class
     public virtual async Task<IEnumerable<T>> GetAllAsync()
     {
         return await _dbSet.ToListAsync();
+    }
+
+    public virtual async Task<PagedResult<T>> GetPagedAsync(PaginationParams paginationParams)
+    {
+        var totalCount = await _dbSet.CountAsync();
+
+        var items = await _dbSet
+            .Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
+            .Take(paginationParams.PageSize)
+            .ToListAsync();
+
+        return new PagedResult<T>
+        {
+            Items = items,
+            PageNumber = paginationParams.PageNumber,
+            PageSize = paginationParams.PageSize,
+            TotalCount = totalCount
+        };
     }
 
     public virtual async Task<EntityEntry<T>> AddAsync(T entity)

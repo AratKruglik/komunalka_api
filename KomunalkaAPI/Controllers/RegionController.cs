@@ -1,37 +1,56 @@
 using KomunalkaAPI.DTO;
-using KomunalkaAPI.Services.Region;
+using KomunalkaAPI.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KomunalkaAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
+[Asp.Versioning.ApiVersion("1.0")]
 [Authorize]
-public class RegionController(IRegionService regionService) : ControllerBase
+public class RegionController(IUnitOfWork unitOfWork) : ControllerBase
 {
     [HttpGet(Name = "regions")]
-    public async Task<ActionResult<ApiResponse<List<RegionDto>>>> GetAll()
+    public async Task<ActionResult<IEnumerable<RegionDto>>> GetAll()
     {
-        var regions = await regionService.GetAllAsync();
-        if (!regions.Any())
+        var regions = await unitOfWork.Regions.GetAllAsync();
+        var regionList = regions.ToList();
+
+        if (!regionList.Any())
         {
-            return NotFound(ApiResponse<List<RegionDto>>.Fail(new[] { "Regions not found" }, "Not Found"));
+            return NotFound("Regions not found");
         }
 
-        return Ok(ApiResponse<List<RegionDto>>.Success(regions.ToList(), "Regions retrieved"));
+        var regionDtos = regionList.Select(region => new RegionDto
+        {
+            Id = region.Id,
+            Name = region.Name,
+            CreatedAt = region.CreatedAt,
+            UpdatedAt = region.UpdatedAt
+        }).ToList();
+
+        return Ok(regionDtos);
     }
 
     [HttpGet("{id:int}", Name = "region")]
-    public async Task<ActionResult<ApiResponse<RegionDto>>> GetById(int id)
+    public async Task<ActionResult<RegionDto>> GetById(int id)
     {
-        var result = await regionService.GetByIdAsync(id);
+        var region = await unitOfWork.Regions.GetByIdAsync(id);
 
-        if (result.NotFound)
+        if (region == null)
         {
-            return NotFound(ApiResponse<RegionDto>.Fail(new[] { "Region not found" }, "Not Found"));
+            return NotFound("Region not found");
         }
 
-        return Ok(ApiResponse<RegionDto>.Success(result.Data!, "Region retrieved"));
+        var regionDto = new RegionDto
+        {
+            Id = region.Id,
+            Name = region.Name,
+            CreatedAt = region.CreatedAt,
+            UpdatedAt = region.UpdatedAt
+        };
+
+        return Ok(regionDto);
     }
 }

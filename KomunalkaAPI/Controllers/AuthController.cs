@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace KomunalkaAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
+[Asp.Versioning.ApiVersion("1.0")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
@@ -27,7 +28,7 @@ public class AuthController : ControllerBase
         var result = await _authService.RegisterAsync(request);
         if (result == null)
         {
-            return BadRequest(new { Message = "A user with this email already exists" });
+            return BadRequest(new { Message = "User with this email already exists" });
         }
 
         return Ok(result);
@@ -82,7 +83,7 @@ public class AuthController : ControllerBase
             return BadRequest(new { Message = "Invalid refresh token" });
         }
 
-        return Ok(new { Message = "Refresh token revoked successfully" });
+        return Ok(new { Message = "Token successfully revoked" });
     }
 
     [Authorize]

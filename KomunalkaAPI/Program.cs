@@ -1,7 +1,9 @@
 using System.Text.Json.Serialization;
 using System.Text;
+using AspNetCoreRateLimit;
 using DotNetEnv;
 using KomunalkaAPI.Data;
+using KomunalkaAPI.Middleware;
 using KomunalkaAPI.Repositories;
 using KomunalkaAPI.Repositories.User;
 using KomunalkaAPI.Services.Auth;
@@ -9,10 +11,25 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 Env.Load();
+
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File(
+        path: "logs/komunalka-api-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 30,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
 
@@ -22,6 +39,42 @@ builder.Configuration
     .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
 
+// CORS Configuration
+var corsOriginsString = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS");
+var corsOrigins = corsOriginsString?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? [];
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", policy =>
+    {
+        if (corsOrigins.Length > 0 && corsOrigins[0].Trim() == "*")
+        {
+            // Allow all origins
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else if (corsOrigins.Length > 0)
+        {
+            // Allow specific origins
+            policy.WithOrigins(corsOrigins.Select(o => o.Trim()).ToArray())
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+        else if (builder.Environment.IsDevelopment())
+        {
+            // Allow everything in Development (if no specific origins specified)
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            throw new InvalidOperationException("CORS_ALLOWED_ORIGINS must be configured in Production");
+        }
+    });
+});
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -30,8 +83,13 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
-// RFC7807 ProblemDetails
-builder.Services.AddProblemDetails();
+// API Versioning
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+}).AddMvc();
 
 // DB context connection
 var connectionString = $"Host={Environment.GetEnvironmentVariable("POSTGRES_HOST")};Port={Environment.GetEnvironmentVariable("POSTGRES_PORT")};Database={Environment.GetEnvironmentVariable("POSTGRES_DATABASE")};Username={Environment.GetEnvironmentVariable("POSTGRES_USERNAME")};Password={Environment.GetEnvironmentVariable("POSTGRES_PASSWORD")}";
@@ -55,7 +113,8 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    // Require HTTPS in Production, allow HTTP in Development
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -69,19 +128,28 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Repositories
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(Program));
+
+// Health Checks
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ApplicationDbContext>("database");
+
+// Rate Limiting
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.AddInMemoryRateLimiting();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
+// Repositories - Unit of Work pattern
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-// Domain services
-builder.Services.AddScoped<KomunalkaAPI.Services.Address.IAddressService, KomunalkaAPI.Services.Address.AddressService>();
-builder.Services.AddScoped<KomunalkaAPI.Services.Users.IUserService, KomunalkaAPI.Services.Users.UsersService>();
-builder.Services.AddScoped<KomunalkaAPI.Services.Currency.ICurrencyService, KomunalkaAPI.Services.Currency.CurrencyService>();
-builder.Services.AddScoped<KomunalkaAPI.Services.Region.IRegionService, KomunalkaAPI.Services.Region.RegionService>();
-builder.Services.AddScoped<KomunalkaAPI.Services.AddressType.IAddressTypeService, KomunalkaAPI.Services.AddressType.AddressTypeService>();
+
+// Background Services
+builder.Services.AddHostedService<KomunalkaAPI.Services.Background.TokenCleanupService>();
 
 // Add OpenAPI with JWT Auth support
 builder.Services.AddEndpointsApiExplorer();
@@ -110,40 +178,86 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
+
+    // Add XML documentation
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
 });
 
 var app = builder.Build();
 
-var httpPort = Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORT") ?? "5095";
-var httpsPort = Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT") ?? "7095";
-   
-app.Urls.Add($"http://localhost:{httpPort}");
-app.Urls.Add($"https://localhost:{httpsPort}");
+// Only configure URLs if ASPNETCORE_URLS is not set (for local development)
+if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+{
+    var httpPort = Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORT") ?? "5095";
+    var httpsPort = Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT") ?? "7095";
+
+    app.Urls.Add($"http://localhost:{httpPort}");
+    if (app.Environment.IsDevelopment())
+    {
+        app.Urls.Add($"https://localhost:{httpsPort}");
+    }
+}
 
 
 // Configure the HTTP request pipeline.
+
+// Global exception handler (must be first)
+app.UseMiddleware<ExceptionHandlerMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseHttpsRedirection();
+}
+else
+{
+    // In production (Docker), we use a reverse proxy (nginx, etc.) for HTTPS
+    // So we don't need HTTPS redirection in the app itself
 }
 
-// Global exception handling returning ProblemDetails (RFC 7807)
-app.UseExceptionHandler();
+// Rate Limiting should be one of the first
+app.UseIpRateLimiting();
 
-app.UseHttpsRedirection();
+// CORS must be before Authentication and Authorization
+app.UseCors("CorsPolicy");
 
-// Додавання middleware аутентифікації перед авторизацією
+// Add authentication middleware before authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
-// Виконуємо сід даних
+// Health Check endpoints
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/ready");
+
+// Apply migrations and execute seed data
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await KomunalkaAPI.Data.SeedData.SeedAsync(context);
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        logger.LogInformation("Applying database migrations...");
+        await context.Database.MigrateAsync();
+        logger.LogInformation("Database migrations applied successfully");
+
+        logger.LogInformation("Seeding database...");
+        await KomunalkaAPI.Data.SeedData.SeedAsync(context);
+        logger.LogInformation("Database seeded successfully");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while migrating or seeding the database");
+        throw;
+    }
 }
 
 app.Run();

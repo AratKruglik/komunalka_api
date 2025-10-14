@@ -1,156 +1,197 @@
-using Microsoft.AspNetCore.Mvc;
-using KomunalkaAPI.DTO;
+using AutoMapper;
 using KomunalkaAPI.Extensions;
+using KomunalkaAPI.Models.Pagination;
+using KomunalkaAPI.Models.Responses;
+using KomunalkaAPI.Repositories;
+using Microsoft.AspNetCore.Mvc;
+using KomunalkaAPI.Models;
+using KomunalkaAPI.DTO;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using KomunalkaAPI.Services.Address;
 
 namespace KomunalkaAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
+[Asp.Versioning.ApiVersion("1.0")]
 [Authorize]
-public class AddressController(IAddressService addressService) : ControllerBase
+public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : ControllerBase
 {
     [HttpGet(Name = "addresses")]
-    public async Task<ActionResult<ApiResponse<List<AddressDto>>>> GetAll(
-        [FromQuery] int skip = 0,
-        [FromQuery] int take = 50,
-        [FromQuery] string? sortBy = null,
-        [FromQuery] bool desc = false,
-        CancellationToken cancellationToken = default)
+    public async Task<ActionResult<PaginatedResponse<AddressDto>>> GetAll([FromQuery] PaginationParams paginationParams)
     {
+        // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return StatusCode(StatusCodes.Status401Unauthorized, ApiResponse<List<AddressDto>>.Fail(new[] { "Невійсний токен користувача" }, "Unauthorized"));
+            return Unauthorized("Invalid user token");
         }
 
-        var (items, totalCount, lastUpdatedTicks) = await addressService.GetForUserAsync(userId, skip, take, sortBy, desc, cancellationToken);
-        if (totalCount == 0)
+        // Get all addresses with pagination
+        var pagedAddresses = await unitOfWork.Addresses.GetPagedAsync(paginationParams);
+
+        // Filter addresses only for current user
+        var userAddresses = pagedAddresses.Items.Where(a => a.UserId == userId).ToList();
+        var addressDtos = mapper.Map<List<AddressDto>>(userAddresses);
+
+        var pagedResult = new PagedResult<AddressDto>
         {
-            return NotFound(ApiResponse<List<AddressDto>>.Fail(new[] { "У вас ще немає збережених адрес" }, "Not Found"));
-        }
+            Items = addressDtos,
+            PageNumber = pagedAddresses.PageNumber,
+            PageSize = pagedAddresses.PageSize,
+            TotalCount = pagedAddresses.Items.Count(a => a.UserId == userId) // Count of user addresses
+        };
 
-        var etag = $"W/\"addr-{userId}-{totalCount}-{lastUpdatedTicks}\"";
-        var ifNoneMatch = Request.Headers["If-None-Match"].ToString();
-        if (!string.IsNullOrEmpty(ifNoneMatch) && string.Equals(ifNoneMatch, etag, StringComparison.Ordinal))
-        {
-            return StatusCode(StatusCodes.Status304NotModified);
-        }
+        // Convert to Laravel-compatible format
+        var response = pagedResult.ToPaginatedResponse(addressDtos, Request);
 
-        Response.Headers["ETag"] = etag;
-        Response.Headers["Cache-Control"] = "private, max-age=30";
-        Response.Headers["X-Total-Count"] = totalCount.ToString();
-        Response.Headers["X-Skip"] = skip.ToString();
-        Response.Headers["X-Take"] = take.ToString();
-
-        var meta = new PaginationMeta { Skip = skip, Take = take, Returned = items.Count, Total = totalCount };
-        return Ok(ApiResponse<List<AddressDto>>.Success(items.ToList(), "Адреси отримано", meta));
+        return Ok(response);
     }
 
     [HttpGet("{id:int}", Name = "address")]
-    public async Task<ActionResult<AddressDto>> GetById(int id, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<AddressDto>> GetById(int id)
     {
+        // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Problem(title: "Unauthorized", detail: "Невійсний токен користувача", statusCode: StatusCodes.Status401Unauthorized);
+            return Unauthorized("Invalid user token");
         }
 
-        var result = await addressService.GetByIdForUserAsync(userId, id, cancellationToken);
-        if (result.NotFound)
+        var address = await unitOfWork.Addresses.GetByIdAsync(id);
+
+        if (address == null)
         {
-            return NotFound(new ProblemDetails { Title = "Not Found", Detail = "Адресу не знайдено", Status = StatusCodes.Status404NotFound, Instance = HttpContext.Request.Path });
+            return NotFound("Address not found");
         }
-        if (result.Forbidden)
+
+        // Check if the address belongs to the current user
+        if (address.UserId != userId)
         {
-            return Forbid();
+            return Forbid("You don't have access to this address");
         }
 
-        var dto = result.Data!;
+        var addressDto = mapper.Map<AddressDto>(address);
 
-        var etag = $"W/\"addr-{dto.Id}-{dto.UpdatedAt.ToFileTimeUtc()}\"";
-        var ifNoneMatch = Request.Headers["If-None-Match"].ToString();
-        if (!string.IsNullOrEmpty(ifNoneMatch) && string.Equals(ifNoneMatch, etag, StringComparison.Ordinal))
-        {
-            return StatusCode(StatusCodes.Status304NotModified);
-        }
-        Response.Headers["ETag"] = etag;
-        Response.Headers["Cache-Control"] = "private, max-age=60";
-
-        return Ok(dto);
+        return Ok(addressDto);
     }
 
     [HttpPost(Name = "createAddress")]
-    public async Task<ActionResult<AddressDto>> Create(CreateAddressDto createAddressDto, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<AddressDto>> Create(CreateAddressDto createAddressDto)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
 
+        // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Problem(title: "Unauthorized", detail: "Невійсний токен користувача", statusCode: StatusCodes.Status401Unauthorized);
+            return Unauthorized("Invalid user token");
         }
 
-        var result = await addressService.CreateAsync(userId, createAddressDto, cancellationToken);
-        if (!result.Success)
+        // Check if Region and AddressType exist
+        var region = await unitOfWork.Regions.GetByIdAsync(createAddressDto.RegionId);
+        if (region == null)
         {
-            // Business validation failures
-            return BadRequest(new ProblemDetails { Title = "Bad Request", Detail = string.Join("; ", result.Errors), Status = StatusCodes.Status400BadRequest });
+            return BadRequest("Specified region does not exist");
         }
 
-        var createdAddressDto = result.Data!;
+        var addressType = await unitOfWork.AddressTypes.GetByIdAsync(createAddressDto.AddressTypeId);
+        if (addressType == null)
+        {
+            return BadRequest("Specified address type does not exist");
+        }
+
+        // If this is primary address, set all other user addresses as non-primary
+        if (createAddressDto.IsPrimary)
+        {
+            var userAddresses = await unitOfWork.Addresses.GetAllAsync();
+            var currentUserAddresses = userAddresses.Where(a => a.UserId == userId && a.IsPrimary);
+            foreach (var addr in currentUserAddresses)
+            {
+                addr.IsPrimary = false;
+                unitOfWork.Addresses.Update(addr);
+            }
+        }
+
+        var address = mapper.Map<Address>(createAddressDto);
+        address.UserId = userId;
+        address.User = null!; // Will be populated by EF
+        address.Region = region;
+        address.AddressType = addressType;
+
+        var entityEntry = await unitOfWork.Addresses.AddAsync(address);
+        await unitOfWork.CompleteAsync();
+
+        var createdAddress = entityEntry.Entity;
+        var createdAddressDto = mapper.Map<AddressDto>(createdAddress);
+
         return CreatedAtRoute("address", new { id = createdAddressDto.Id }, createdAddressDto);
     }
 
     [HttpPut("{id:int}", Name = "updateAddress")]
-    public async Task<ActionResult<AddressDto>> Update(int id, UpdateAddressDto addressDto, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<AddressDto>> Update(int id, AddressDto addressDto)
     {
+        // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Problem(title: "Unauthorized", detail: "Невійсний токен користувача", statusCode: StatusCodes.Status401Unauthorized);
+            return Unauthorized("Invalid user token");
         }
 
-        var result = await addressService.UpdateAsync(userId, id, addressDto, cancellationToken);
-        if (result.NotFound)
+        var address = await unitOfWork.Addresses.GetByIdAsync(id);
+
+        if (address == null)
         {
-            return NotFound(new ProblemDetails { Title = "Not Found", Detail = "Адресу не знайдено", Status = StatusCodes.Status404NotFound, Instance = HttpContext.Request.Path });
-        }
-        if (result.Forbidden)
-        {
-            return Forbid();
-        }
-        if (!result.Success)
-        {
-            return BadRequest(new ProblemDetails { Title = "Bad Request", Detail = string.Join("; ", result.Errors), Status = StatusCodes.Status400BadRequest });
+            return NotFound("Address not found");
         }
 
-        return Ok(result.Data!);
+        // Check if the address belongs to the current user
+        if (address.UserId != userId)
+        {
+            return Forbid("You don't have access to this address");
+        }
+
+        // Don't allow changing UserId - address always belongs to current user
+        mapper.Map(addressDto, address);
+        address.UserId = userId; // Ensure UserId doesn't change
+        address.UpdatedAt = DateTime.UtcNow;
+
+        unitOfWork.Addresses.Update(address);
+        await unitOfWork.CompleteAsync();
+
+        var updatedAddressDto = mapper.Map<AddressDto>(address);
+
+        return Ok(updatedAddressDto);
     }
 
     [HttpDelete("{id:int}", Name = "deleteAddress")]
-    public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> Delete(int id)
     {
+        // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
         {
-            return Problem(title: "Unauthorized", detail: "Невійсний токен користувача", statusCode: StatusCodes.Status401Unauthorized);
+            return Unauthorized("Invalid user token");
         }
 
-        var result = await addressService.DeleteAsync(userId, id, cancellationToken);
-        if (result.NotFound)
+        var address = await unitOfWork.Addresses.GetByIdAsync(id);
+
+        if (address == null)
         {
-            return NotFound(new ProblemDetails { Title = "Not Found", Detail = "Адресу не знайдено", Status = StatusCodes.Status404NotFound, Instance = HttpContext.Request.Path });
+            return NotFound("Address not found");
         }
-        if (result.Forbidden)
+
+        // Check if the address belongs to the current user
+        if (address.UserId != userId)
         {
-            return Forbid();
+            return Forbid("You don't have access to this address");
         }
+
+        unitOfWork.Addresses.Delete(address);
+        await unitOfWork.CompleteAsync();
 
         return NoContent();
     }
