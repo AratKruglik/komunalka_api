@@ -80,8 +80,9 @@ public class UsersService(IUnitOfWork unitOfWork) : IUserService
         var user = new User
         {
             Username = dto.Username,
-            Password = dto.Password ?? string.Empty,
+            Password = BCrypt.Net.BCrypt.HashPassword(dto.Password ?? string.Empty),
             Email = dto.Email,
+            Role = "User"
         };
 
         var entityEntry = await unitOfWork.Users.AddAsync(user);
@@ -107,7 +108,10 @@ public class UsersService(IUnitOfWork unitOfWork) : IUserService
         }
 
         user.Username = dto.Username;
-        user.Password = dto.Password ?? user.Password;
+        if (!string.IsNullOrEmpty(dto.Password))
+        {
+            user.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+        }
         user.Email = dto.Email;
         user.UpdatedAt = DateTime.UtcNow;
 

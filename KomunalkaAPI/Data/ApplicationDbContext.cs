@@ -20,6 +20,7 @@ namespace KomunalkaAPI.Data
         public DbSet<AddressType> AddressTypes { get; set; }
         public DbSet<UtilityType> UtilityTypes { get; set; }
         public DbSet<Meter> Meters { get; set; }
+        public DbSet<MeterReadingImage> MeterReadingImages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
