@@ -40,14 +40,23 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 // CORS Configuration
-var corsOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")?.Split(',') ?? [];
+var corsOriginsString = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS");
+var corsOrigins = corsOriginsString?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? [];
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
-        if (corsOrigins.Length > 0 && corsOrigins[0] != "*")
+        if (corsOrigins.Length > 0 && corsOrigins[0].Trim() == "*")
         {
-            policy.WithOrigins(corsOrigins)
+            // Allow all origins
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else if (corsOrigins.Length > 0)
+        {
+            // Allow specific origins
+            policy.WithOrigins(corsOrigins.Select(o => o.Trim()).ToArray())
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -181,11 +190,18 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-var httpPort = Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORT") ?? "5095";
-var httpsPort = Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT") ?? "7095";
-   
-app.Urls.Add($"http://localhost:{httpPort}");
-app.Urls.Add($"https://localhost:{httpsPort}");
+// Only configure URLs if ASPNETCORE_URLS is not set (for local development)
+if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+{
+    var httpPort = Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORT") ?? "5095";
+    var httpsPort = Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT") ?? "7095";
+
+    app.Urls.Add($"http://localhost:{httpPort}");
+    if (app.Environment.IsDevelopment())
+    {
+        app.Urls.Add($"https://localhost:{httpsPort}");
+    }
+}
 
 
 // Configure the HTTP request pipeline.
@@ -197,9 +213,13 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
+else
+{
+    // In production (Docker), we use a reverse proxy (nginx, etc.) for HTTPS
+    // So we don't need HTTPS redirection in the app itself
+}
 
 // Rate Limiting should be one of the first
 app.UseIpRateLimiting();
@@ -217,11 +237,27 @@ app.MapControllers();
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/health/ready");
 
-// Execute seed data
+// Apply migrations and execute seed data
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await KomunalkaAPI.Data.SeedData.SeedAsync(context);
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        logger.LogInformation("Applying database migrations...");
+        await context.Database.MigrateAsync();
+        logger.LogInformation("Database migrations applied successfully");
+
+        logger.LogInformation("Seeding database...");
+        await KomunalkaAPI.Data.SeedData.SeedAsync(context);
+        logger.LogInformation("Database seeded successfully");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while migrating or seeding the database");
+        throw;
+    }
 }
 
 app.Run();

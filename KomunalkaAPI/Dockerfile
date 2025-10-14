@@ -2,7 +2,6 @@
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
 EXPOSE 8080
-EXPOSE 8081
 
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
@@ -17,8 +16,7 @@ RUN dotnet restore "KomunalkaAPI.csproj"
 COPY . .
 RUN dotnet build "KomunalkaAPI.csproj" \
     -c $BUILD_CONFIGURATION \
-    -o /app/build \
-    --no-restore
+    -o /app/build
 
 # Publish stage
 FROM build AS publish
@@ -26,8 +24,6 @@ ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "KomunalkaAPI.csproj" \
     -c $BUILD_CONFIGURATION \
     -o /app/publish \
-    --no-restore \
-    --no-build \
     /p:UseAppHost=false
 
 # Final stage
@@ -41,7 +37,7 @@ RUN mkdir -p /app/logs
 COPY --from=publish /app/publish .
 
 # Set environment variables
-ENV ASPNETCORE_URLS=http://+:8080;https://+:8081
+ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 # Health check

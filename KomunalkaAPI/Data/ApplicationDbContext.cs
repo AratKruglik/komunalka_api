@@ -1,3 +1,4 @@
+using KomunalkaAPI.Extensions;
 using KomunalkaAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,5 +20,18 @@ namespace KomunalkaAPI.Data
         public DbSet<AddressType> AddressTypes { get; set; }
         public DbSet<UtilityType> UtilityTypes { get; set; }
         public DbSet<Meter> Meters { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Apply Laravel naming conventions (snake_case)
+            modelBuilder.UseLaravelNamingConventions();
+
+            // Configure many-to-many relationship with Laravel naming
+            // Laravel uses alphabetical order: address_service_category (not addresses_service_categories)
+            modelBuilder.Entity<AddressesServiceCategory>()
+                .ToTable("address_service_category");
+        }
     }
 }
