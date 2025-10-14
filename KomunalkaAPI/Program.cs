@@ -147,9 +147,13 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // Services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.Image.IFileStorageService, KomunalkaAPI.Services.Image.FileStorageService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.Image.IImageService, KomunalkaAPI.Services.Image.ImageService>();
 
 // Background Services
 builder.Services.AddHostedService<KomunalkaAPI.Services.Background.TokenCleanupService>();
+builder.Services.AddSingleton<KomunalkaAPI.Services.Background.ImageProcessingService>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<KomunalkaAPI.Services.Background.ImageProcessingService>());
 
 // Add OpenAPI with JWT Auth support
 builder.Services.AddEndpointsApiExplorer();

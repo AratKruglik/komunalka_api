@@ -14,6 +14,7 @@ public class CurrencyService(IUnitOfWork unitOfWork) : ICurrencyService
         var dtos = list.Select(c => new CurrencyDto
         {
             Id = c.Id,
+            Code = c.Code,
             Name = c.Name,
             Symbol = c.Symbol,
             CreatedAt = c.CreatedAt,
@@ -33,6 +34,7 @@ public class CurrencyService(IUnitOfWork unitOfWork) : ICurrencyService
         var dto = new CurrencyDto
         {
             Id = currency.Id,
+            Code = currency.Code,
             Name = currency.Name,
             Symbol = currency.Symbol,
             CreatedAt = currency.CreatedAt,
@@ -45,6 +47,7 @@ public class CurrencyService(IUnitOfWork unitOfWork) : ICurrencyService
     {
         var entity = new Models.Currency
         {
+            Code = dto.Code,
             Name = dto.Name,
             Symbol = dto.Symbol,
             CreatedAt = DateTime.UtcNow,
@@ -58,6 +61,7 @@ public class CurrencyService(IUnitOfWork unitOfWork) : ICurrencyService
         return new CurrencyDto
         {
             Id = created.Id,
+            Code = created.Code,
             Name = created.Name,
             Symbol = created.Symbol,
             CreatedAt = created.CreatedAt,
@@ -73,6 +77,7 @@ public class CurrencyService(IUnitOfWork unitOfWork) : ICurrencyService
             return ServiceResult<CurrencyDto>.NotFoundResult("Валюту не знайдено");
         }
 
+        currency.Code = dto.Code;
         currency.Name = dto.Name;
         currency.Symbol = dto.Symbol;
         currency.UpdatedAt = DateTime.UtcNow;
@@ -83,6 +88,7 @@ public class CurrencyService(IUnitOfWork unitOfWork) : ICurrencyService
         var updatedDto = new CurrencyDto
         {
             Id = currency.Id,
+            Code = currency.Code,
             Name = currency.Name,
             Symbol = currency.Symbol,
             CreatedAt = currency.CreatedAt,

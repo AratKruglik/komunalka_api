@@ -3,6 +3,7 @@ using System;
 using KomunalkaAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KomunalkaAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251014073154_InitialMigrationLaravelCompatible")]
+    partial class InitialMigrationLaravelCompatible
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -285,74 +288,6 @@ namespace KomunalkaAPI.Migrations
                         .HasDatabaseName("ix_meters_utility_type_id");
 
                     b.ToTable("meters");
-                });
-
-            modelBuilder.Entity("KomunalkaAPI.Models.MeterReadingImage", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("Height")
-                        .HasColumnType("integer")
-                        .HasColumnName("height");
-
-                    b.Property<bool>("IsProcessed")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_processed");
-
-                    b.Property<string>("MimeType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("mime_type");
-
-                    b.Property<string>("OptimizedPath")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("optimized_path");
-
-                    b.Property<long>("OptimizedSizeInBytes")
-                        .HasColumnType("bigint")
-                        .HasColumnName("optimized_size_in_bytes");
-
-                    b.Property<int>("ServiceCounterValueId")
-                        .HasColumnType("integer")
-                        .HasColumnName("service_counter_value_id");
-
-                    b.Property<string>("ThumbnailPath")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("thumbnail_path");
-
-                    b.Property<long>("ThumbnailSizeInBytes")
-                        .HasColumnType("bigint")
-                        .HasColumnName("thumbnail_size_in_bytes");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<int>("Width")
-                        .HasColumnType("integer")
-                        .HasColumnName("width");
-
-                    b.HasKey("Id")
-                        .HasName("pk_meter_reading_images");
-
-                    b.HasIndex("ServiceCounterValueId")
-                        .HasDatabaseName("ix_meter_reading_images_service_counter_value_id");
-
-                    b.ToTable("meter_reading_images");
                 });
 
             modelBuilder.Entity("KomunalkaAPI.Models.RefreshToken", b =>
@@ -809,18 +744,6 @@ namespace KomunalkaAPI.Migrations
                     b.Navigation("UtilityType");
                 });
 
-            modelBuilder.Entity("KomunalkaAPI.Models.MeterReadingImage", b =>
-                {
-                    b.HasOne("KomunalkaAPI.Models.ServiceCounterValue", "ServiceCounterValue")
-                        .WithMany("Images")
-                        .HasForeignKey("ServiceCounterValueId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_meter_reading_images_service_counter_values_service_counter_v~");
-
-                    b.Navigation("ServiceCounterValue");
-                });
-
             modelBuilder.Entity("KomunalkaAPI.Models.RefreshToken", b =>
                 {
                     b.HasOne("KomunalkaAPI.Models.User", "User")
@@ -924,11 +847,6 @@ namespace KomunalkaAPI.Migrations
             modelBuilder.Entity("KomunalkaAPI.Models.ServiceCategory", b =>
                 {
                     b.Navigation("Addresses");
-                });
-
-            modelBuilder.Entity("KomunalkaAPI.Models.ServiceCounterValue", b =>
-                {
-                    b.Navigation("Images");
                 });
 
             modelBuilder.Entity("KomunalkaAPI.Models.User", b =>

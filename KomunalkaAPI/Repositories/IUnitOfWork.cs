@@ -5,6 +5,9 @@ using KomunalkaAPI.Repositories.User;
 using KomunalkaAPI.Repositories.Region;
 using KomunalkaAPI.Repositories.AddressType;
 using KomunalkaAPI.Repositories.RefreshToken;
+using KomunalkaAPI.Repositories.MeterReadingImage;
+using KomunalkaAPI.Repositories.ServiceCounter;
+using KomunalkaAPI.Repositories.ServiceCounterValue;
 
 namespace KomunalkaAPI.Repositories;
 
@@ -17,5 +20,8 @@ public interface IUnitOfWork : IDisposable
     IRegionRepository Regions { get; }
     IAddressTypeRepository AddressTypes { get; }
     IRefreshTokenRepository RefreshTokens { get; }
+    IMeterReadingImageRepository MeterReadingImages { get; }
+    IServiceCounterRepository ServiceCounters { get; }
+    IServiceCounterValueRepository ServiceCounterValues { get; }
     Task<int> CompleteAsync();
 }
