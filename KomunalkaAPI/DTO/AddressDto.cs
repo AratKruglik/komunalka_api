@@ -17,7 +17,7 @@ public class AddressDto
     public int AddressTypeId { get; set; }
     // public User? User { get; set; }
     public RegionDto? Region { get; set; }
-    public AddressType? AddressType { get; set; }
+    public AddressTypeDto? AddressType { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }

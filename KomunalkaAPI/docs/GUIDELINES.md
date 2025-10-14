@@ -1,295 +1,72 @@
-# Керівництво з ефективної розробки в Komunalka API
+# Керівництво розробника Komunalka API (коротка версія)
 
-Цей документ містить рекомендації та практики для ефективної розробки в проекті Komunalka API.
+Це стисле керівництво узгоджене з ARCHITECTURE.md і AUTHENTICATION.md. Тримайте його в фокусі під час розробки.
 
-## Технічний стек
+Опис проєкту / Project summary
+- UA: Це API для ведення статистики по комунальних платежах для однієї або багатьох адрес користувача. Мета — збирати та агрегувати показники з лічильників комунальних послуг: газ, водопостачання (холодне й гаряче), електроенергія (денний і нічний тарифи). Дані зберігаються по адресах, з підтримкою тарифів і історії показників для подальшої аналітики.
+- EN: This API tracks utility payment statistics for a single or multiple user addresses. Its goal is to collect and aggregate readings from utility meters: gas, water supply (cold and hot), and electricity (day/night tariffs). Data is stored per address, with tariff support and historical meter readings for analytics.
 
-- **Фреймворк**: ASP.NET Core (.NET 9.0)
-- **Мова програмування**: C# 13.0
-- **База даних**: PostgreSQL
-- **ORM**: Entity Framework Core 9.0
-- **Контейнеризація**: Docker
+1) Збірка та конфігурація
+- SDK: .NET 9.0 (перевірка: `dotnet --list-sdks`). Проєкт: KomunalkaAPI.csproj (ASP.NET Core Web API).
+- Завантаження конфігурації: appsettings.json → appsettings.{ENV}.json → змінні середовища (включно з .env через DotNetEnv.Env.Load()).
+- Обов’язкові змінні середовища:
+  - PostgreSQL: POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DATABASE, POSTGRES_USERNAME, POSTGRES_PASSWORD
+  - JWT: JWT_SECRET (>= 32 символи прод), JWT_ISSUER, JWT_AUDIENCE; додатково: JWT_EXPIRATION_MINUTES, JWT_REFRESH_TOKEN_EXPIRATION_DAYS (за наявності в коді)
+  - Порти Kestrel (за потреби): ASPNETCORE_HTTP_PORT (5095), ASPNETCORE_HTTPS_PORT (7095)
+- Рядок підключення формується в Program.cs із змінних POSTGRES_*. Активний провайдер EF: Npgsql.
+- Запуск:
+  - Docker (рекомендовано для БД): `docker-compose up -d` (API: http://localhost:8080, https://localhost:8081)
+  - Локально: запустіть PostgreSQL, застосуйте міграції `dotnet ef database update`, далі `dotnet run`.
+- Swagger: вмикається для ASPNETCORE_ENVIRONMENT=Development.
 
-## Організація коду
+2) Архітектура (див. docs/ARCHITECTURE.md)
+- Шари:
+  - Presentation: Controllers/, DTO/
+  - Business: Services/, Models/
+  - Data Access: Repositories/, Data/
+- Патерни: Repository та Unit of Work для абстракції доступу до даних і транзакційності.
+- Потік даних: DTO → контролер → сервіс/UnitOfWork → репозиторій → БД → назад у DTO.
+- Сутності (основні): User, Address, ServiceCategory, ServiceCounter, ServiceCounterValue, Tariff.
 
-### Структура проекту
+3) Аутентифікація (див. docs/AUTHENTICATION.md)
+- JWT Bearer; refresh-токени одноразові, зберігаються в БД, можуть бути відкликані.
+- Компоненти: JwtService (генерація/перевірка), AuthService (бізнес-логіка), AuthController (ендпоінти).
+- Базові ендпоінти: POST /api/auth/register, /login, /refresh-token, /revoke-token; GET /validate-token.
+- Захист ендпоінтів: [Authorize], роли через [Authorize(Roles = "...")].
 
-Дотримуйтесь чіткої структури проекту:
+4) Посів (Seeding)
+- Data/SeedData.SeedAsync виконується на старті (Regions, AddressTypes якщо порожньо). Для чистої БД — очищайте відповідні таблиці перед рестартом.
 
-- **Controllers/**: REST API контролери
-- **Models/**: Класи моделей даних
-- **DTO/**: Об'єкти передачі даних
-- **Data/**: Контекст бази даних та міграції
-- **Repositories/**: Репозиторії для роботи з даними
-- **Migrations/**: Міграції Entity Framework
-- **Services/**: Бізнес-логіка
+5) Тестування
+- xUnit (рекомендовано): окремий проєкт KomunalkaAPI.Tests з посиланням на KomunalkaAPI.csproj; приклади пакетів у docs/README.md та розділі нижче.
+- Офлайн smoke check (без NuGet): тимчасовий консольний проєкт, який посилається на KomunalkaAPI.csproj; перевіряє базову працездатність (див. вказівки у проектних нотатках).
+- Інтеграційні тести: не бийтеся в реальну БД; використовуйте контейнерну/тимчасову БД або абстракції з моками.
 
-### Найменування
+6) EF Core і БД
+- Провайдер: Npgsql (PostgreSQL). Синхронізуйте версії пакунків та міграцій.
+- Команди: `dotnet ef migrations add <Name>`; `dotnet ef database update`.
+- Типові помилки: відсутні JWT_* або POSTGRES_* → падіння на старті; невдала БД-підключення зламає посів.
 
-- Використовуйте **PascalCase** для:
-  - Назв класів
-  - Інтерфейсів (починаються з `I`)
-  - Методів
-  - Властивостей
-  - Enum
-- Використовуйте **camelCase** для:
-  - Параметрів методів
-  - Локальних змінних
+7) Конвенції коду
+- DTO — пласкі; не витікаємо EF сутностями в API.
+- Async скрізь для I/O; суфікс Async обов’язковий.
+- Найменування: PascalCase для публічних типів/членів; camelCase — для локальних/параметрів.
+- Валідація: data annotations у моделях; для складного — FluentValidation (за потреби).
+- Серіалізація: System.Text.Json — ігнор циклів, пропуск null (конфіг у Program.cs).
 
-### Приклади найменувань
+8) Порти та інтеграції
+- Локальні порти за замовчуванням: 5095/7095; у Docker — 8080/8081.
+- Swagger має схему Bearer; отримайте JWT через ендпоінти автентифікації та авторизуйтесь у Swagger UI (Development).
 
-```csharp
-public class UserService : IUserService
-{
-    private readonly IUserRepository _userRepository;
+9) Troubleshooting
+- API одразу падає: перевірте JWT_* і POSTGRES_* (включно з .env).
+- `dotnet ef` відсутній: встановіть інструмент (`dotnet tool install --global dotnet-ef`).
+- Міграції vs провайдер: переконайтеся, що активний Npgsql; не створюйте міграції під SqlServer.
+- Конфлікт портів: перевизначте ASPNETCORE_HTTP_PORT/HTTPS.
 
-    public UserService(IUserRepository userRepository)
-    {
-        _userRepository = userRepository;
-    }
+10) Housekeeping
+- Не комітьте .env із секретами; використовуйте .env.example.
+- Оновлюйте docs/README.md і це керівництво при зміні процесів.
+- Тести — у окремому тест-проєкті; не додавайте тестовий код у Web API.
 
-    public async Task<UserDto> GetUserByIdAsync(int userId)
-    {
-        var user = await _userRepository.GetByIdAsync(userId);
-        return MapToDto(user);
-    }
-}
-```
-
-## Коментарі та документація
-
-- Документуйте публічні API за допомогою XML-коментарів
-- Пишіть коментарі для складних алгоритмів і бізнес-логіки
-- Оновлюйте README.md при внесенні значних змін
-
-```csharp
-/// <summary>
-/// Отримує користувача за його ідентифікатором
-/// </summary>
-/// <param name="userId">Ідентифікатор користувача</param>
-/// <returns>DTO користувача або null, якщо користувача не знайдено</returns>
-public async Task<UserDto> GetUserByIdAsync(int userId)
-```
-
-## Робота з Entity Framework
-
-### Міграції
-
-- Створюйте окремі міграції для кожної логічної зміни схеми
-- Використовуйте змістовні назви міграцій
-- Перевіряйте згенеровані міграції перед застосуванням
-
-```bash
-dotnet ef migrations add AddUserRoles
-dotnet ef database update
-```
-
-### Оптимізація запитів
-
-- Використовуйте `Include()` для eager loading пов'язаних сутностей
-- Застосовуйте `AsNoTracking()` для запитів тільки для читання
-- Використовуйте проекції для отримання лише необхідних полів
-
-```csharp
-var users = await _context.Users
-    .AsNoTracking()
-    .Include(u => u.Addresses)
-    .Select(u => new UserDto { Id = u.Id, Name = u.Name })
-    .ToListAsync();
-```
-
-## Обробка помилок
-
-- Використовуйте глобальний обробник винятків для API
-- Створіть спеціалізовані класи винятків для різних ситуацій
-- Логуйте помилки з достатнім контекстом для діагностики
-
-```csharp
-try
-{
-    // Бізнес-логіка
-}
-catch (EntityNotFoundException ex)
-{
-    _logger.LogWarning(ex, "Сутність не знайдена: {EntityId}", ex.EntityId);
-    return NotFound(new ErrorResponse(ex.Message));
-}
-catch (Exception ex)
-{
-    _logger.LogError(ex, "Неочікувана помилка при обробці запиту");
-    return StatusCode(500, new ErrorResponse("Внутрішня помилка сервера"));
-}
-```
-
-## Асинхронне програмування
-
-- Використовуйте асинхронні методи при роботі з I/O операціями
-- Застосовуйте суфікс `Async` для асинхронних методів
-- Уникайте блокуючих викликів у асинхронному коді
-
-```csharp
-// Правильно
-public async Task<User> GetUserAsync(int id)
-{
-    return await _repository.GetByIdAsync(id);
-}
-
-// Неправильно
-public async Task<User> GetUserAsync(int id)
-{
-    return _repository.GetById(id); // Блокуючий виклик
-}
-```
-
-## Тестування
-
-### Юніт-тести
-
-- Пишіть тести для всіх важливих компонентів бізнес-логіки
-- Використовуйте моки для залежностей
-- Дотримуйтесь патерну AAA (Arrange-Act-Assert)
-
-```csharp
-[Fact]
-public async Task GetUserById_WithValidId_ReturnsUser()
-{
-    // Arrange
-    var userId = 1;
-    var mockUser = new User { Id = userId, Name = "Test User" };
-    _mockRepository.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(mockUser);
-
-    // Act
-    var result = await _userService.GetUserByIdAsync(userId);
-
-    // Assert
-    Assert.NotNull(result);
-    Assert.Equal(userId, result.Id);
-    Assert.Equal("Test User", result.Name);
-}
-```
-
-### Інтеграційні тести
-
-- Використовуйте тестову базу даних
-- Налаштовуйте тестові дані перед кожним тестом
-- Очищайте тестові дані після тестів
-
-## Безпека
-
-- Використовуйте параметризовані запити для запобігання SQL-ін'єкцій
-- Валідуйте всі вхідні дані від користувачів
-- Хешуйте паролі з використанням сучасних алгоритмів
-- Налаштуйте CORS правильно
-
-```csharp
-// Налаштування CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowSpecificOrigins",
-        policy =>
-        {
-            policy.WithOrigins("https://trusted-site.com")
-                .AllowAnyMethod()
-                .AllowAnyHeader();
-        });
-});
-```
-
-## Продуктивність
-
-- Використовуйте кешування для частих запитів
-- Оптимізуйте запити до бази даних
-- Уникайте N+1 проблеми при завантаженні пов'язаних сутностей
-- Використовуйте пагінацію для великих наборів даних
-
-```csharp
-// Кешування
-builder.Services.AddMemoryCache();
-
-// Використання кешу
-public async Task<List<UserDto>> GetAllUsersAsync()
-{
-    if (!_memoryCache.TryGetValue("AllUsers", out List<UserDto> users))
-    {
-        users = await _userRepository.GetAllAsync();
-        _memoryCache.Set("AllUsers", users, TimeSpan.FromMinutes(10));
-    }
-    return users;
-}
-
-// Пагінація
-public async Task<PagedResult<UserDto>> GetUsersPagedAsync(int pageNumber, int pageSize)
-{
-    var users = await _context.Users
-        .Skip((pageNumber - 1) * pageSize)
-        .Take(pageSize)
-        .ToListAsync();
-
-    var totalCount = await _context.Users.CountAsync();
-
-    return new PagedResult<UserDto>
-    {
-        Items = users.Select(u => MapToDto(u)).ToList(),
-        TotalCount = totalCount,
-        PageNumber = pageNumber,
-        PageSize = pageSize
-    };
-}
-```
-
-## Розгортання
-
-- Використовуйте Docker для контейнеризації
-- Автоматизуйте процес розгортання з CI/CD
-- Створіть скрипти для міграції бази даних при розгортанні
-
-## Версіонування API
-
-- Використовуйте семантичне версіонування
-- Підтримуйте зворотну сумісність між версіями
-- Документуйте зміни API в CHANGELOG.md
-
-```csharp
-[ApiController]
-[Route("api/v{version:apiVersion}/users")]
-[ApiVersion("1.0")]
-public class UsersController : ControllerBase
-{
-    // Реалізація API v1
-}
-
-[ApiController]
-[Route("api/v{version:apiVersion}/users")]
-[ApiVersion("2.0")]
-public class UsersV2Controller : ControllerBase
-{
-    // Реалізація API v2
-}
-```
-
-## Моніторинг та логування
-
-- Налаштуйте структуроване логування з використанням Serilog
-- Встановіть відповідні рівні логування для різних середовищ
-- Реалізуйте моніторинг продуктивності та здоров'я системи
-
-```csharp
-// Налаштування логування
-builder.Host.UseSerilog((ctx, lc) => lc
-    .WriteTo.Console()
-    .WriteTo.File("logs/komunalka-api-.log", rollingInterval: RollingInterval.Day)
-    .Enrich.FromLogContext()
-    .Enrich.WithMachineName()
-    .ReadFrom.Configuration(ctx.Configuration));
-```
-
-## Регулярні практики
-
-- Проводьте код-рев'ю для всіх змін
-- Регулярно оновлюйте залежності
-- Виконуйте статичний аналіз коду з використанням інструментів як SonarQube
-- Проводьте рефакторинг коду для підтримки якості
-
-## Висновок
-
-Дотримання цих рекомендацій допоможе створювати якісний, підтримуваний та ефективний код в проекті Komunalka API. Пам'ятайте, що ці рекомендації можуть еволюціонувати з часом разом із розвитком проекту та технологій.
+Джерела: деталі архітектури — docs/ARCHITECTURE.md; автентифікації — docs/AUTHENTICATION.md. Залишайте це керівництво коротким і актуальним.
