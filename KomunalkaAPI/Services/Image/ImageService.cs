@@ -2,6 +2,7 @@ using KomunalkaAPI.Models;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using ImageMagick;
 
 namespace KomunalkaAPI.Services.Image;
 
@@ -33,6 +34,15 @@ public class ImageService : IImageService
     {
         try
         {
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+
+            // Check if it's HEIC/HEIF - convert to JPEG first using ImageMagick
+            if (extension == ".heic" || extension == ".heif")
+            {
+                return await ProcessHeicImageAsync(imageStream, fileName, readingId);
+            }
+
+            // Process regular images with ImageSharp
             using var image = await SixLabors.ImageSharp.Image.LoadAsync(imageStream);
 
             // Auto-orient based on EXIF data
@@ -66,6 +76,77 @@ public class ImageService : IImageService
             _logger.LogError(ex, "Failed to process image {FileName}", fileName);
             throw;
         }
+    }
+
+    private async Task<(string optimizedPath, string thumbnailPath, long optimizedSize, long thumbnailSize, int width, int height)>
+        ProcessHeicImageAsync(Stream heicStream, string fileName, int readingId)
+    {
+        try
+        {
+            _logger.LogInformation("Processing HEIC/HEIF image: {FileName}", fileName);
+
+            // Load HEIC with ImageMagick
+            using var magickImage = new MagickImage(heicStream);
+
+            // Auto-orient based on EXIF
+            magickImage.AutoOrient();
+
+            // Remove EXIF metadata for privacy
+            magickImage.RemoveProfile("exif");
+            magickImage.RemoveProfile("iptc");
+            magickImage.RemoveProfile("xmp");
+
+            var originalWidth = (int)magickImage.Width;
+            var originalHeight = (int)magickImage.Height;
+
+            // Generate unique file names
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            var baseFileName = Path.GetFileNameWithoutExtension(fileName);
+            var subfolder = $"{DateTime.UtcNow.Year}/{DateTime.UtcNow.Month:D2}/{readingId}";
+
+            // Process optimized image
+            var optimizedFileName = $"{baseFileName}_{timestamp}_optimized.jpg";
+            var (optimizedPath, optimizedSize) = await SaveResizedHeicImageAsync(
+                magickImage, subfolder, optimizedFileName, _optimizedWidth);
+
+            // Process thumbnail
+            var thumbnailFileName = $"{baseFileName}_{timestamp}_thumbnail.jpg";
+            var (thumbnailPath, thumbnailSize) = await SaveResizedHeicImageAsync(
+                magickImage, subfolder, thumbnailFileName, _thumbnailWidth);
+
+            return (optimizedPath, thumbnailPath, optimizedSize, thumbnailSize, originalWidth, originalHeight);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to process HEIC image {FileName}", fileName);
+            throw;
+        }
+    }
+
+    private async Task<(string path, long size)> SaveResizedHeicImageAsync(
+        MagickImage sourceImage, string subfolder, string fileName, int maxWidth)
+    {
+        using var resizedImage = sourceImage.Clone();
+
+        if (resizedImage.Width > maxWidth)
+        {
+            var ratio = (double)maxWidth / resizedImage.Width;
+            var newHeight = (int)(resizedImage.Height * ratio);
+            resizedImage.Resize((uint)maxWidth, (uint)newHeight);
+        }
+
+        // Set JPEG quality
+        resizedImage.Quality = (uint)_jpegQuality;
+        resizedImage.Format = MagickFormat.Jpeg;
+
+        using var ms = new MemoryStream();
+        await resizedImage.WriteAsync(ms);
+
+        ms.Position = 0;
+        var path = await _fileStorage.SaveFileAsync(ms, fileName, subfolder);
+        var size = ms.Length;
+
+        return (path, size);
     }
 
     private async Task<(string path, long size)> SaveResizedImageAsync(
@@ -115,6 +196,8 @@ public class ImageService : IImageService
             ".jpg" or ".jpeg" => "image/jpeg",
             ".png" => "image/png",
             ".webp" => "image/webp",
+            ".heic" => "image/heic",
+            ".heif" => "image/heif",
             _ => "application/octet-stream"
         };
     }

@@ -57,7 +57,7 @@ public class FileValidationAttribute : ValidationAttribute
         try
         {
             using var stream = file.OpenReadStream();
-            var buffer = new byte[8];
+            var buffer = new byte[12];
             stream.Read(buffer, 0, buffer.Length);
 
             // Check for JPEG signature (FF D8 FF)
@@ -74,6 +74,21 @@ public class FileValidationAttribute : ValidationAttribute
                 stream.Seek(8, SeekOrigin.Begin);
                 stream.Read(buffer, 0, 4);
                 if (buffer[0] == 0x57 && buffer[1] == 0x45 && buffer[2] == 0x42 && buffer[3] == 0x50)
+                    return true;
+            }
+
+            // Check for HEIC/HEIF signature
+            // HEIC files start with: 00 00 00 [size] 66 74 79 70 (ftyp)
+            // Followed by: 68 65 69 63 (heic) or 68 65 69 78 (heix) or 6D 69 66 31 (mif1)
+            stream.Seek(0, SeekOrigin.Begin);
+            stream.Read(buffer, 0, 12);
+
+            if (buffer[4] == 0x66 && buffer[5] == 0x74 && buffer[6] == 0x79 && buffer[7] == 0x70)
+            {
+                // Check for heic, heix, hevc, hevx, mif1, msf1
+                var brand = System.Text.Encoding.ASCII.GetString(buffer, 8, 4);
+                if (brand == "heic" || brand == "heix" || brand == "hevc" ||
+                    brand == "hevx" || brand == "mif1" || brand == "msf1")
                     return true;
             }
 
