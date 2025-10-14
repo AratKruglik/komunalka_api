@@ -1,0 +1,13 @@
+using KomunalkaAPI.DTO;
+using KomunalkaAPI.Services.Common;
+
+namespace KomunalkaAPI.Services.Users;
+
+public interface IUserService
+{
+    Task<IReadOnlyList<UserDto>> GetAllAsync();
+    Task<ServiceResult<UserDto>> GetByIdAsync(int id);
+    Task<UserDto> CreateAsync(UserDto dto);
+    Task<ServiceResult<UserDto>> UpdateAsync(int id, UserDto dto);
+    Task<ServiceResult<bool>> DeleteAsync(int id);
+}

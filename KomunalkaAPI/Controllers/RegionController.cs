@@ -1,5 +1,5 @@
 using KomunalkaAPI.DTO;
-using KomunalkaAPI.Repositories;
+using KomunalkaAPI.Services.Region;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,52 +8,30 @@ namespace KomunalkaAPI.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class RegionController(IUnitOfWork unitOfWork) : ControllerBase
+public class RegionController(IRegionService regionService) : ControllerBase
 {
     [HttpGet(Name = "regions")]
-    public async Task<ActionResult<IEnumerable<RegionDto>>> GetAll()
+    public async Task<ActionResult<ApiResponse<List<RegionDto>>>> GetAll()
     {
-        var regions = await unitOfWork.Regions.GetAllAsync();
-        var regionList = regions.ToList();
-
-        if (!regionList.Any())
+        var regions = await regionService.GetAllAsync();
+        if (!regions.Any())
         {
-            return NotFound("Області не знайдено");
+            return NotFound(ApiResponse<List<RegionDto>>.Fail(new[] { "Regions not found" }, "Not Found"));
         }
 
-        await unitOfWork.CompleteAsync();
-
-        var regionDtos = regionList.Select(region => new RegionDto
-        {
-            Id = region.Id,
-            Name = region.Name,
-            CreatedAt = region.CreatedAt,
-            UpdatedAt = region.UpdatedAt
-        }).ToList();
-
-        return Ok(regionDtos);
+        return Ok(ApiResponse<List<RegionDto>>.Success(regions.ToList(), "Regions retrieved"));
     }
 
     [HttpGet("{id:int}", Name = "region")]
-    public async Task<ActionResult<RegionDto>> GetById(int id)
+    public async Task<ActionResult<ApiResponse<RegionDto>>> GetById(int id)
     {
-        var region = await unitOfWork.Regions.GetByIdAsync(id);
+        var result = await regionService.GetByIdAsync(id);
 
-        if (region == null)
+        if (result.NotFound)
         {
-            return NotFound("Область не знайдено");
+            return NotFound(ApiResponse<RegionDto>.Fail(new[] { "Region not found" }, "Not Found"));
         }
 
-        await unitOfWork.CompleteAsync();
-
-        var regionDto = new RegionDto
-        {
-            Id = region.Id,
-            Name = region.Name,
-            CreatedAt = region.CreatedAt,
-            UpdatedAt = region.UpdatedAt
-        };
-
-        return Ok(regionDto);
+        return Ok(ApiResponse<RegionDto>.Success(result.Data!, "Region retrieved"));
     }
 }

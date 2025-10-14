@@ -30,6 +30,9 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
+// RFC7807 ProblemDetails
+builder.Services.AddProblemDetails();
+
 // DB context connection
 var connectionString = $"Host={Environment.GetEnvironmentVariable("POSTGRES_HOST")};Port={Environment.GetEnvironmentVariable("POSTGRES_PORT")};Database={Environment.GetEnvironmentVariable("POSTGRES_DATABASE")};Username={Environment.GetEnvironmentVariable("POSTGRES_USERNAME")};Password={Environment.GetEnvironmentVariable("POSTGRES_PASSWORD")}";
 
@@ -73,6 +76,12 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 // Services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+// Domain services
+builder.Services.AddScoped<KomunalkaAPI.Services.Address.IAddressService, KomunalkaAPI.Services.Address.AddressService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.Users.IUserService, KomunalkaAPI.Services.Users.UsersService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.Currency.ICurrencyService, KomunalkaAPI.Services.Currency.CurrencyService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.Region.IRegionService, KomunalkaAPI.Services.Region.RegionService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.AddressType.IAddressTypeService, KomunalkaAPI.Services.AddressType.AddressTypeService>();
 
 // Add OpenAPI with JWT Auth support
 builder.Services.AddEndpointsApiExplorer();
@@ -118,6 +127,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Global exception handling returning ProblemDetails (RFC 7807)
+app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
 

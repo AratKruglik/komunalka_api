@@ -27,7 +27,7 @@ public class AuthController : ControllerBase
         var result = await _authService.RegisterAsync(request);
         if (result == null)
         {
-            return BadRequest(new { Message = "Користувач з таким email вже існує" });
+            return BadRequest(new { Message = "A user with this email already exists" });
         }
 
         return Ok(result);
@@ -44,7 +44,7 @@ public class AuthController : ControllerBase
         var result = await _authService.AuthenticateAsync(request);
         if (result == null)
         {
-            return Unauthorized(new { Message = "Невірний email або пароль" });
+            return Unauthorized(new { Message = "Invalid email or password" });
         }
 
         return Ok(result);
@@ -61,7 +61,7 @@ public class AuthController : ControllerBase
         var result = await _authService.RefreshTokenAsync(request.RefreshToken);
         if (result == null)
         {
-            return BadRequest(new { Message = "Недійсний або прострочений токен оновлення" });
+            return BadRequest(new { Message = "Invalid or expired refresh token" });
         }
 
         return Ok(result);
@@ -79,16 +79,16 @@ public class AuthController : ControllerBase
         var result = await _authService.RevokeTokenAsync(request.RefreshToken);
         if (!result)
         {
-            return BadRequest(new { Message = "Недійсний токен оновлення" });
+            return BadRequest(new { Message = "Invalid refresh token" });
         }
 
-        return Ok(new { Message = "Токен успішно відкликано" });
+        return Ok(new { Message = "Refresh token revoked successfully" });
     }
 
     [Authorize]
     [HttpGet("validate-token")]
     public IActionResult ValidateToken()
     {
-        return Ok(new { Message = "Токен дійсний" });
+        return Ok(new { Message = "Token is valid" });
     }
 }

@@ -12,4 +12,18 @@ public interface IAddressRepository : IRepository<Address>
     new Task<EntityEntry<Address>> AddAsync(Address address);
     new void Update(Address address);
     new void Delete(Address address);
+
+    // Query-specific methods
+    Task<List<Address>> GetByUserIdAsync(
+        int userId,
+        int skip,
+        int take,
+        string? sortBy,
+        bool desc,
+        bool includeDeps,
+        CancellationToken cancellationToken);
+
+    Task<int> CountByUserIdAsync(int userId, CancellationToken cancellationToken);
+
+    Task<List<Address>> GetUserAddressesAsync(int userId, CancellationToken cancellationToken);
 }
