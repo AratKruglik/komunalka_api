@@ -1,0 +1,56 @@
+using KomunalkaAPI.DTO;
+using KomunalkaAPI.Repositories;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace KomunalkaAPI.Controllers;
+
+[ApiController]
+[Route("api/v{version:apiVersion}/[controller]")]
+[Asp.Versioning.ApiVersion("1.0")]
+[Authorize]
+public class RegionController(IUnitOfWork unitOfWork) : ControllerBase
+{
+    [HttpGet(Name = "regions")]
+    public async Task<ActionResult<IEnumerable<RegionDto>>> GetAll()
+    {
+        var regions = await unitOfWork.Regions.GetAllAsync();
+        var regionList = regions.ToList();
+
+        if (!regionList.Any())
+        {
+            return NotFound("Regions not found");
+        }
+
+        var regionDtos = regionList.Select(region => new RegionDto
+        {
+            Id = region.Id,
+            Name = region.Name,
+            CreatedAt = region.CreatedAt,
+            UpdatedAt = region.UpdatedAt
+        }).ToList();
+
+        return Ok(regionDtos);
+    }
+
+    [HttpGet("{id:int}", Name = "region")]
+    public async Task<ActionResult<RegionDto>> GetById(int id)
+    {
+        var region = await unitOfWork.Regions.GetByIdAsync(id);
+
+        if (region == null)
+        {
+            return NotFound("Region not found");
+        }
+
+        var regionDto = new RegionDto
+        {
+            Id = region.Id,
+            Name = region.Name,
+            CreatedAt = region.CreatedAt,
+            UpdatedAt = region.UpdatedAt
+        };
+
+        return Ok(regionDto);
+    }
+}

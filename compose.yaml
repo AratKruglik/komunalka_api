@@ -3,4 +3,33 @@
     image: komunalka.api
     build:
       context: .
-      dockerfile: Komunalka.API/Dockerfile
+      dockerfile: KomunalkaAPI/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD};
+    networks:
+      - komunalka-network
+
+  db:
+    image: postgres:17-alpine3.20
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - komunalka-db-data:/var/lib/postgresql/data
+    networks:
+      - komunalka-network
+
+networks:
+  komunalka-network:
+    driver: bridge
+
+volumes:
+  komunalka-db-data:
+    
