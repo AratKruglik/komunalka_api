@@ -7,6 +7,20 @@ on:
       - 'v*'
   pull_request:
     branches: [ master ]
+  workflow_dispatch:
+    inputs:
+      push_to_registry:
+        description: 'Push to GitHub Container Registry'
+        required: false
+        default: 'true'
+        type: boolean
+      tag:
+        description: 'Custom tag for the image (optional)'
+        required: false
+        type: string
+  schedule:
+    # Запуск щотижня у неділю о 03:00 UTC (05:00 Kyiv time)
+    - cron: '0 3 * * 0'
 
 env:
   REGISTRY: ghcr.io
@@ -28,7 +42,7 @@ jobs:
       uses: docker/setup-buildx-action@v3
 
     - name: Log in to Container Registry
-      if: github.event_name != 'pull_request'
+      if: github.event_name != 'pull_request' && (inputs.push_to_registry != 'false')
       uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
@@ -47,13 +61,14 @@ jobs:
           type=semver,pattern={{major}}.{{minor}}
           type=semver,pattern={{major}}
           type=sha,prefix={{branch}}-
+          type=raw,value=${{ inputs.tag }},enable=${{ inputs.tag != '' }}
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./Dockerfile
-        push: ${{ github.event_name != 'pull_request' }}
+        push: ${{ github.event_name != 'pull_request' && (inputs.push_to_registry != 'false') }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
@@ -61,3 +76,21 @@ jobs:
 
     - name: Build Docker Compose test
       run: docker-compose build
+
+    - name: Send Telegram notification
+      if: always() && (github.event_name == 'push' || github.event_name == 'schedule')
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_CHAT_ID }}
+        token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        format: markdown
+        message: |
+          ${{ job.status == 'success' && '🐳' || '❌' }} **Docker Build ${{ job.status == 'success' && 'Completed' || 'Failed' }}**
+
+          Repository: `${{ github.repository }}`
+          Branch: `${{ github.ref_name }}`
+          Tags: ${{ steps.meta.outputs.tags }}
+          Pushed: ${{ github.event_name != 'pull_request' && (inputs.push_to_registry != 'false') }}
+
+          [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          [View packages](${{ github.server_url }}/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }})
