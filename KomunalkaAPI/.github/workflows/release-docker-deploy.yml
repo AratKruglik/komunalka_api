@@ -1,0 +1,107 @@
+name: Release Docker Deploy
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag (for manual re-deploy)'
+        required: true
+        type: string
+      environment:
+        description: 'GitHub environment name (maps to server configuration)'
+        required: false
+        default: production
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy Docker Image
+    runs-on:
+      - self-hosted
+      - linux
+      - docker
+    permissions:
+      contents: read
+      packages: write
+    environment:
+      name: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'production' }}
+    concurrency:
+      group: release-deploy
+      cancel-in-progress: false
+
+    steps:
+    - name: Resolve release tag
+      id: release
+      env:
+        RELEASE_TAG: ${{ github.event.release.tag_name }}
+        INPUT_TAG: ${{ inputs.tag }}
+      run: |
+        TAG="${RELEASE_TAG:-$INPUT_TAG}"
+        if [ -z "$TAG" ]; then
+          TAG="${GITHUB_REF#refs/tags/}"
+        fi
+        if [ -z "$TAG" ]; then
+          echo "Unable to resolve release tag" >&2
+          exit 1
+        fi
+        echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      shell: bash
+
+    - name: Check out release
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ steps.release.outputs.tag }}
+        fetch-depth: 0
+
+    - name: Prepare image coordinates
+      id: image
+      run: |
+        REPO="${{ env.REGISTRY }}/${{ github.repository }}"
+        REPO_LOWER=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')
+        echo "repository=$REPO_LOWER" >> "$GITHUB_OUTPUT"
+        echo "tagged=$REPO_LOWER:${{ steps.release.outputs.tag }}" >> "$GITHUB_OUTPUT"
+      shell: bash
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.GHCR_USERNAME != '' && secrets.GHCR_USERNAME || github.actor }}
+        password: ${{ secrets.GHCR_TOKEN != '' && secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+
+    - name: Extract Docker metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ steps.image.outputs.repository }}
+        tags: |
+          type=raw,value=${{ steps.release.outputs.tag }}
+          type=raw,value=latest
+
+    - name: Build and push image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Deploy with Docker Compose
+      env:
+        API_IMAGE: ${{ steps.image.outputs.tagged }}
+      run: |
+        docker compose -f deploy/docker-compose.yml pull api || true
+        docker compose -f deploy/docker-compose.yml up -d --pull always --remove-orphans
+        docker image prune -f
+      shell: bash

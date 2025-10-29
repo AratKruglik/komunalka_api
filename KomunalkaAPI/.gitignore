@@ -387,6 +387,7 @@ FodyWeavers.xsd
 .env
 .env.local
 .env.*.local
+deploy/.env
 
 # But allow .env.example
 !.env.example
