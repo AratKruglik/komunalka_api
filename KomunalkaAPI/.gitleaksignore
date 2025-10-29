@@ -1,0 +1,31 @@
+# Gitleaks ignore file for false positives
+# Documentation: https://github.com/gitleaks/gitleaks#gitleaksignore
+
+# Documentation files with example connection strings and tokens
+LOCAL_DEVELOPMENT.md:*
+METER_READING_IMAGES.md:*
+RIDER_DATABASE_SETUP.md:*
+LARAVEL_IMAGE_IMPLEMENTATION_GUIDE.md:*
+CLAUDE_CODE_LARAVEL_INSTRUCTIONS.md:*
+docs/*.md:*
+
+# GitHub workflow files using proper secrets syntax (${{ secrets.* }})
+.github/workflows/*.yml:*:${{ secrets.
+.github/workflows/*.yaml:*:${{ secrets.
+
+# GitHub artifact URLs and commit hashes in workflow files
+.github/workflows/*.yml:*:https://github.com/
+.github/workflows/*.yaml:*:https://github.com/
+
+# Example curl commands in documentation
+*:*:curl *Bearer YOUR_JWT_TOKEN*
+*:*:curl *Bearer YOUR_TOKEN*
+
+# Example connection strings in documentation
+*:*:Host=localhost;Port=5432;Database=komunalka;Username=postgres;Password=postgres
+*:*:postgres@localhost:5432
+*:*:Password123
+
+# Test and example data
+*:*:test@example.com
+*:*:testuser
