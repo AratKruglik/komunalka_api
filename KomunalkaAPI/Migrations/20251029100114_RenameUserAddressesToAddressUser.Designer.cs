@@ -3,6 +3,7 @@ using System;
 using KomunalkaAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KomunalkaAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251029100114_RenameUserAddressesToAddressUser")]
+    partial class RenameUserAddressesToAddressUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -706,10 +709,6 @@ namespace KomunalkaAPI.Migrations
 
                     b.HasIndex("AddressId")
                         .HasDatabaseName("ix_address_user_address_id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasFilter("is_primary = true");
 
                     b.HasIndex("UserId", "AddressId")
                         .IsUnique();

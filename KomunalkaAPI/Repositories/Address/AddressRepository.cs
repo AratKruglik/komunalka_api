@@ -10,7 +10,6 @@ public class AddressRepository(DbContext context) : Repository<Address>(context)
     public override async Task<IEnumerable<Address>> GetAllAsync()
     {
         return await _dbSet
-            .Include(a => a.User)
             .Include(a => a.Region)
             .Include(a => a.AddressType)
             .Where(a => a.DeletedAt == null)
@@ -20,7 +19,6 @@ public class AddressRepository(DbContext context) : Repository<Address>(context)
     public override async Task<Address?> GetByIdAsync(int id)
     {
         return await _dbSet
-            .Include(a => a.User)
             .Include(a => a.Region)
             .Include(a => a.AddressType)
             .Where(a => a.DeletedAt == null)
@@ -30,7 +28,6 @@ public class AddressRepository(DbContext context) : Repository<Address>(context)
     public async Task<IEnumerable<Address>> GetWithDeletedAsync()
     {
         return await _dbSet
-            .Include(a => a.User)
             .Include(a => a.Region)
             .Include(a => a.AddressType)
             .ToListAsync();
@@ -60,20 +57,22 @@ public class AddressRepository(DbContext context) : Repository<Address>(context)
         bool includeDeps,
         CancellationToken cancellationToken)
     {
-        IQueryable<Address> query = _dbSet.Where(a => a.DeletedAt == null && a.UserId == userId);
+        // Тепер фільтруємо через UserAddresses
+        IQueryable<Address> query = _dbSet
+            .Where(a => a.DeletedAt == null && a.UserAddresses!.Any(ua => ua.UserId == userId));
 
         if (includeDeps)
         {
             query = query
                 .Include(a => a.Region)
-                .Include(a => a.AddressType);
+                .Include(a => a.AddressType)
+                .Include(a => a.UserAddresses!.Where(ua => ua.UserId == userId));
         }
 
         query = (sortBy?.ToLowerInvariant()) switch
         {
             "city" => desc ? query.OrderByDescending(a => a.City) : query.OrderBy(a => a.City),
             "updatedat" => desc ? query.OrderByDescending(a => a.UpdatedAt) : query.OrderBy(a => a.UpdatedAt),
-            "isprimary" => desc ? query.OrderByDescending(a => a.IsPrimary).ThenByDescending(a => a.UpdatedAt) : query.OrderBy(a => a.IsPrimary).ThenBy(a => a.UpdatedAt),
             _ => desc ? query.OrderByDescending(a => a.CreatedAt) : query.OrderBy(a => a.CreatedAt)
         };
 
@@ -85,12 +84,15 @@ public class AddressRepository(DbContext context) : Repository<Address>(context)
 
     public async Task<int> CountByUserIdAsync(int userId, CancellationToken cancellationToken)
     {
-        return await _dbSet.CountAsync(a => a.DeletedAt == null && a.UserId == userId, cancellationToken);
+        return await _dbSet.CountAsync(a => a.DeletedAt == null && a.UserAddresses!.Any(ua => ua.UserId == userId), cancellationToken);
     }
 
     public async Task<List<Address>> GetUserAddressesAsync(int userId, CancellationToken cancellationToken)
     {
-        return await _dbSet.Where(a => a.DeletedAt == null && a.UserId == userId)
+        return await _dbSet
+            .Where(a => a.DeletedAt == null && a.UserAddresses!.Any(ua => ua.UserId == userId))
+            .Include(a => a.Region)
+            .Include(a => a.AddressType)
             .ToListAsync(cancellationToken);
     }
 }

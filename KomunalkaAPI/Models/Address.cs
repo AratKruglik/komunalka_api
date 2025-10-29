@@ -7,10 +7,7 @@ public class Address
 {
     [Key]
     public int Id { get; set; }
-    
-    [ForeignKey("User")]
-    public int UserId { get; set; }
-    
+
     [ForeignKey("Region")]
     public int RegionId { get; set; } // Region (relationship)
 
@@ -36,8 +33,6 @@ public class Address
     [StringLength(500)]
     public string? Notes { get; set; } // Notes
 
-    public bool IsPrimary { get; set; } // Whether this is the primary address
-
     [ForeignKey("AddressType")]
     public int AddressTypeId { get; set; } // Address type (relationship)
     
@@ -46,7 +41,7 @@ public class Address
     public DateTime? DeletedAt { get; set; }
 
     // Navigation properties
-    public required User User { get; set; }
+    public List<UserAddress>? UserAddresses { get; set; }
     public required Region Region { get; set; }
     public required AddressType AddressType { get; set; }
     public List<ServiceCounter>? ServiceCounters { get; set; }

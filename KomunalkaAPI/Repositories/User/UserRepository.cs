@@ -10,21 +10,24 @@ public class UserRepository(DbContext context) : Repository<User>(context), IUse
     public new async Task<List<User>> GetAllAsync()
     {
         return await _dbSet
-            .Include(user => user.Addresses)
+            .Include(user => user.UserAddresses!)
+                .ThenInclude(ua => ua.Address)
             .ToListAsync();
     }
-    
+
     public new async Task<User?> GetByIdAsync(int id)
     {
         return await _dbSet
-            .Include(user => user.Addresses)
+            .Include(user => user.UserAddresses!)
+                .ThenInclude(ua => ua.Address)
             .FirstOrDefaultAsync(user => user.Id == id);
     }
-    
+
     public async Task<User?> GetByEmailAsync(string email)
     {
         return await _dbSet
-            .Include(user => user.Addresses)
+            .Include(user => user.UserAddresses!)
+                .ThenInclude(ua => ua.Address)
             .FirstOrDefaultAsync(user => user.Email == email);
     }
     
