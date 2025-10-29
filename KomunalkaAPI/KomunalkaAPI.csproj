@@ -7,6 +7,8 @@
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);1591</NoWarn>
+        <!-- Disable NuGet vulnerability audit when offline to avoid NU1900 warnings -->
+        <NuGetAudit>false</NuGetAudit>
     </PropertyGroup>
 
     <ItemGroup>
