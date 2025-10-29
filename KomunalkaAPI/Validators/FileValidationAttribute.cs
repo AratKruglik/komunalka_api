@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.IO;
+using System.Text;
 using Microsoft.Extensions.Configuration;
 
 namespace KomunalkaAPI.Validators;
@@ -57,40 +59,24 @@ public class FileValidationAttribute : ValidationAttribute
         try
         {
             using var stream = file.OpenReadStream();
-            var buffer = new byte[12];
-            stream.Read(buffer, 0, buffer.Length);
+            Span<byte> header = stackalloc byte[12];
 
-            // Check for JPEG signature (FF D8 FF)
-            if (buffer[0] == 0xFF && buffer[1] == 0xD8 && buffer[2] == 0xFF)
-                return true;
-
-            // Check for PNG signature (89 50 4E 47)
-            if (buffer[0] == 0x89 && buffer[1] == 0x50 && buffer[2] == 0x4E && buffer[3] == 0x47)
-                return true;
-
-            // Check for WebP signature (52 49 46 46 ... 57 45 42 50)
-            if (buffer[0] == 0x52 && buffer[1] == 0x49 && buffer[2] == 0x46 && buffer[3] == 0x46)
+            if (!TryReadHeader(stream, header))
             {
-                stream.Seek(8, SeekOrigin.Begin);
-                stream.Read(buffer, 0, 4);
-                if (buffer[0] == 0x57 && buffer[1] == 0x45 && buffer[2] == 0x42 && buffer[3] == 0x50)
-                    return true;
+                return false;
             }
 
-            // Check for HEIC/HEIF signature
-            // HEIC files start with: 00 00 00 [size] 66 74 79 70 (ftyp)
-            // Followed by: 68 65 69 63 (heic) or 68 65 69 78 (heix) or 6D 69 66 31 (mif1)
-            stream.Seek(0, SeekOrigin.Begin);
-            stream.Read(buffer, 0, 12);
+            if (IsJpeg(header))
+                return true;
 
-            if (buffer[4] == 0x66 && buffer[5] == 0x74 && buffer[6] == 0x79 && buffer[7] == 0x70)
-            {
-                // Check for heic, heix, hevc, hevx, mif1, msf1
-                var brand = System.Text.Encoding.ASCII.GetString(buffer, 8, 4);
-                if (brand == "heic" || brand == "heix" || brand == "hevc" ||
-                    brand == "hevx" || brand == "mif1" || brand == "msf1")
-                    return true;
-            }
+            if (IsPng(header))
+                return true;
+
+            if (IsWebp(header))
+                return true;
+
+            if (IsHeic(header))
+                return true;
 
             return false;
         }
@@ -98,5 +84,39 @@ public class FileValidationAttribute : ValidationAttribute
         {
             return false;
         }
+    }
+
+    private static bool TryReadHeader(Stream stream, Span<byte> header)
+    {
+        try
+        {
+            stream.ReadExactly(header);
+            return true;
+        }
+        catch (EndOfStreamException)
+        {
+            return false;
+        }
+    }
+
+    private static bool IsJpeg(ReadOnlySpan<byte> header)
+        => header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
+
+    private static bool IsPng(ReadOnlySpan<byte> header)
+        => header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47;
+
+    private static bool IsWebp(ReadOnlySpan<byte> header)
+        => header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46 &&
+           header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50;
+
+    private static bool IsHeic(ReadOnlySpan<byte> header)
+    {
+        if (header[4] != 0x66 || header[5] != 0x74 || header[6] != 0x79 || header[7] != 0x70)
+        {
+            return false;
+        }
+
+        var brand = Encoding.ASCII.GetString(header[8..12]);
+        return brand is "heic" or "heix" or "hevc" or "hevx" or "mif1" or "msf1";
     }
 }
