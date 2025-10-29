@@ -107,15 +107,20 @@ DELETE {{KomunalkaAPI_HostAddress}}/users/1
 Authorization: Bearer {{jwt_token}}
 
 ### Address Management Endpoints
+# Note: All address endpoints now work with user-specific addresses
+# The same physical address can be shared by multiple users
+# Each user can independently mark their addresses as primary using isPrimary flag
 
 # Get all addresses with pagination (requires authentication)
-GET {{KomunalkaAPI_HostAddress}}/address?page=1&pageSize=10
+# Returns only addresses associated with the current user
+GET {{KomunalkaAPI_HostAddress}}/address?page=1&perPage=10
 Accept: application/json
 Authorization: Bearer {{jwt_token}}
 
 ###
 
 # Get address by ID (requires authentication)
+# Returns address only if current user has access to it
 GET {{KomunalkaAPI_HostAddress}}/address/1
 Accept: application/json
 Authorization: Bearer {{jwt_token}}
@@ -123,6 +128,7 @@ Authorization: Bearer {{jwt_token}}
 ###
 
 # Create new address (requires authentication)
+# If isPrimary is true, all other addresses for this user will be marked as non-primary
 POST {{KomunalkaAPI_HostAddress}}/address
 Content-Type: application/json
 Authorization: Bearer {{jwt_token}}
@@ -142,14 +148,15 @@ Authorization: Bearer {{jwt_token}}
 ###
 
 # Update address (requires authentication)
+# If isPrimary is changed to true, all other addresses for this user will be marked as non-primary
+# Only updates the address if current user has access to it
 PUT {{KomunalkaAPI_HostAddress}}/address/1
 Content-Type: application/json
 Authorization: Bearer {{jwt_token}}
 
 {
-  "userId": 1,
   "regionId": 9,
-    "zipCode": "01001",
+  "zipCode": "01001",
   "city": "Київ",
   "street": "вул. Хрещатик",
   "buildingNumber": "1",
@@ -162,6 +169,8 @@ Authorization: Bearer {{jwt_token}}
 ###
 
 # Delete address (requires authentication)
+# Removes the link between user and address
+# If this was the last user linked to this address, the address is soft-deleted
 DELETE {{KomunalkaAPI_HostAddress}}/address/1
 Authorization: Bearer {{jwt_token}}
 
@@ -346,8 +355,15 @@ GET http://localhost:8080/health/ready
 # - Swagger: http://localhost:5242/swagger (Development only)
 #
 # Pagination:
-# - Address endpoint supports pagination with ?page=1&pageSize=10
+# - Address endpoint supports pagination with ?page=1&perPage=10 (or pageSize=10)
 # - Returns Laravel-compatible format with data, links, and meta
+# - Optional sorting: ?sortBy=city&desc=true (or updatedat, isprimary)
+#
+# Address Management:
+# - Many-to-many relationship: addresses can be shared between users
+# - Each user has independent isPrimary flag for their addresses
+# - Setting isPrimary=true auto-resets other addresses for that user
+# - Database uses Laravel naming convention: address_user pivot table
 #
 # CORS:
 # - Configured to allow origins from environment variable
