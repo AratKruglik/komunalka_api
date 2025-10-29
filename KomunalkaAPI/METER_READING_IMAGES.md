@@ -1,5 +1,7 @@
 # Meter Reading Images Feature
 
+> **⚠️ SECURITY NOTE**: This documentation contains example credentials and tokens for demonstration purposes only. Never use these values in production or commit real secrets to git.
+
 ## Огляд
 
 Функціонал додавання фотографій лічильників до показань з автоматичною оптимізацією зображень у фоновому режимі.
@@ -180,6 +182,7 @@ wwwroot/
 ### cURL
 
 ```bash
+# Example API calls for demonstration - Replace YOUR_TOKEN with actual JWT token
 # Створити показання з фото
 curl -X POST http://localhost:8080/api/v1/meterreading \
   -H "Authorization: Bearer YOUR_TOKEN" \

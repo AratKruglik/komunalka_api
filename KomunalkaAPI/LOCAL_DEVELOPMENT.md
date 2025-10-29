@@ -1,5 +1,7 @@
 # Local Development Guide
 
+> **⚠️ SECURITY NOTE**: This documentation contains example credentials and connection strings for LOCAL DEVELOPMENT ONLY. Never use these values in production or commit real secrets to git.
+
 ## Робота з міграціями EF Core
 
 ### Проблема
@@ -11,6 +13,7 @@
 #### Варіант 1: Використання явного connection string (рекомендовано)
 
 ```bash
+# Example connection string for LOCAL development only
 dotnet ef database update --connection "Host=localhost;Port=5432;Database=komunalka;Username=postgres;Password=postgres"
 ```
 
@@ -19,6 +22,7 @@ dotnet ef database update --connection "Host=localhost;Port=5432;Database=komuna
 Створіть файл `.env.local` з налаштуваннями для локальної розробки:
 
 ```env
+# Example values for LOCAL development only - DO NOT commit real secrets!
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 POSTGRES_DATABASE=komunalka
@@ -141,6 +145,7 @@ API буде доступне на:
 ### 1. Отримайте JWT токен
 
 ```bash
+# Example test credentials for LOCAL development only
 # Зареєструйте користувача
 curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
@@ -163,6 +168,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 ### 2. Створіть показання з фото
 
 ```bash
+# Replace YOUR_JWT_TOKEN with actual token from login response
 curl -X POST http://localhost:8080/api/v1/meterreading \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -F "ServiceCounterId=1" \
@@ -173,6 +179,7 @@ curl -X POST http://localhost:8080/api/v1/meterreading \
 ### 3. Перегляньте результат
 
 ```bash
+# Replace YOUR_JWT_TOKEN with actual token from login response
 # Отримати показання з метаданими фото
 curl -X GET http://localhost:8080/api/v1/meterreading/1 \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
