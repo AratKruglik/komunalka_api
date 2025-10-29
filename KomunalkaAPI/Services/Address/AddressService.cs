@@ -15,42 +15,63 @@ public class AddressService(IUnitOfWork unitOfWork) : IAddressService
         bool desc,
         CancellationToken cancellationToken)
     {
-        var addressList = await unitOfWork.Addresses.GetByUserIdAsync(userId, skip, take, sortBy, desc, includeDeps: true, cancellationToken);
-        var totalCount = await unitOfWork.Addresses.CountByUserIdAsync(userId, cancellationToken);
+        // Отримуємо UserAddress зв'язки для користувача
+        var userAddresses = await unitOfWork.UserAddresses.GetByUserIdAsync(userId, cancellationToken);
 
-        var lastUpdatedTicks = addressList.Count > 0 ? addressList.Max(a => a.UpdatedAt).ToFileTimeUtc() : 0;
+        var totalCount = userAddresses.Count;
 
-        var dtos = addressList.Select(address => new AddressDto
+        // Застосовуємо пагінацію та сортування
+        var sorted = sortBy?.ToLowerInvariant() switch
         {
-            Id = address.Id,
-            UserId = address.UserId,
-            RegionId = address.RegionId,
-            ZipCode = address.ZipCode,
-            City = address.City,
-            Street = address.Street,
-            BuildingNumber = address.BuildingNumber,
-            ApartmentNumber = address.ApartmentNumber,
-            Notes = address.Notes,
-            IsPrimary = address.IsPrimary,
-            AddressTypeId = address.AddressTypeId,
-            Region = address.Region != null ? new RegionDto
+            "city" => desc
+                ? userAddresses.OrderByDescending(ua => ua.Address.City)
+                : userAddresses.OrderBy(ua => ua.Address.City),
+            "updatedat" => desc
+                ? userAddresses.OrderByDescending(ua => ua.Address.UpdatedAt)
+                : userAddresses.OrderBy(ua => ua.Address.UpdatedAt),
+            "isprimary" => desc
+                ? userAddresses.OrderByDescending(ua => ua.IsPrimary).ThenByDescending(ua => ua.Address.UpdatedAt)
+                : userAddresses.OrderBy(ua => ua.IsPrimary).ThenBy(ua => ua.Address.UpdatedAt),
+            _ => desc
+                ? userAddresses.OrderByDescending(ua => ua.Address.CreatedAt)
+                : userAddresses.OrderBy(ua => ua.Address.CreatedAt)
+        };
+
+        var paged = sorted.Skip(skip).Take(take > 0 ? take : int.MaxValue).ToList();
+
+        var lastUpdatedTicks = paged.Count > 0 ? paged.Max(ua => ua.Address.UpdatedAt).ToFileTimeUtc() : 0;
+
+        var dtos = paged.Select(ua => new AddressDto
+        {
+            Id = ua.Address.Id,
+            UserId = ua.UserId, // З UserAddress
+            RegionId = ua.Address.RegionId,
+            ZipCode = ua.Address.ZipCode,
+            City = ua.Address.City,
+            Street = ua.Address.Street,
+            BuildingNumber = ua.Address.BuildingNumber,
+            ApartmentNumber = ua.Address.ApartmentNumber,
+            Notes = ua.Address.Notes,
+            IsPrimary = ua.IsPrimary, // З UserAddress
+            AddressTypeId = ua.Address.AddressTypeId,
+            Region = ua.Address.Region != null ? new RegionDto
             {
-                Id = address.Region.Id,
-                Name = address.Region.Name,
-                CreatedAt = address.Region.CreatedAt,
-                UpdatedAt = address.Region.UpdatedAt
+                Id = ua.Address.Region.Id,
+                Name = ua.Address.Region.Name,
+                CreatedAt = ua.Address.Region.CreatedAt,
+                UpdatedAt = ua.Address.Region.UpdatedAt
             } : null,
-            AddressType = address.AddressType != null ? new AddressTypeDto
+            AddressType = ua.Address.AddressType != null ? new AddressTypeDto
             {
-                Id = address.AddressType.Id,
-                Name = address.AddressType.Name,
-                Description = address.AddressType.Description,
-                Icon = address.AddressType.Icon,
-                CreatedAt = address.AddressType.CreatedAt,
-                UpdatedAt = address.AddressType.UpdatedAt
+                Id = ua.Address.AddressType.Id,
+                Name = ua.Address.AddressType.Name,
+                Description = ua.Address.AddressType.Description,
+                Icon = ua.Address.AddressType.Icon,
+                CreatedAt = ua.Address.AddressType.CreatedAt,
+                UpdatedAt = ua.Address.AddressType.UpdatedAt
             } : null,
-            CreatedAt = address.CreatedAt,
-            UpdatedAt = address.UpdatedAt
+            CreatedAt = ua.Address.CreatedAt,
+            UpdatedAt = ua.Address.UpdatedAt
         }).ToList();
 
         return (dtos, totalCount, lastUpdatedTicks);
@@ -58,48 +79,44 @@ public class AddressService(IUnitOfWork unitOfWork) : IAddressService
 
     public async Task<ServiceResult<AddressDto>> GetByIdForUserAsync(int userId, int addressId, CancellationToken cancellationToken)
     {
-        var address = await unitOfWork.Addresses.GetByIdAsync(addressId);
-        if (address == null)
+        // Перевіряємо, чи має користувач доступ до цієї адреси
+        var userAddress = await unitOfWork.UserAddresses.GetByUserAndAddressAsync(userId, addressId, cancellationToken);
+        if (userAddress == null)
         {
-            return ServiceResult<AddressDto>.NotFoundResult("Адресу не знайдено");
-        }
-
-        if (address.UserId != userId)
-        {
-            return ServiceResult<AddressDto>.ForbiddenResult();
+            return ServiceResult<AddressDto>.NotFoundResult("Адресу не знайдено або у вас немає доступу до неї");
         }
 
         var dto = new AddressDto
         {
-            Id = address.Id,
-            UserId = address.UserId,
-            RegionId = address.RegionId,
-            ZipCode = address.ZipCode,
-            City = address.City,
-            Street = address.Street,
-            BuildingNumber = address.BuildingNumber,
-            ApartmentNumber = address.ApartmentNumber,
-            Notes = address.Notes,
-            IsPrimary = address.IsPrimary,
-            AddressTypeId = address.AddressTypeId,
-            Region = address.Region != null ? new RegionDto
+            Id = userAddress.Address.Id,
+            UserId = userAddress.UserId,
+            RegionId = userAddress.Address.RegionId,
+            ZipCode = userAddress.Address.ZipCode,
+            City = userAddress.Address.City,
+            Street = userAddress.Address.Street,
+            BuildingNumber = userAddress.Address.BuildingNumber,
+            ApartmentNumber = userAddress.Address.ApartmentNumber,
+            Notes = userAddress.Address.Notes,
+            IsPrimary = userAddress.IsPrimary,
+            AddressTypeId = userAddress.Address.AddressTypeId,
+            Region = userAddress.Address.Region != null ? new RegionDto
             {
-                Id = address.Region.Id,
-                Name = address.Region.Name,
-                CreatedAt = address.Region.CreatedAt,
-                UpdatedAt = address.Region.UpdatedAt
+                Id = userAddress.Address.Region.Id,
+                Name = userAddress.Address.Region.Name,
+                CreatedAt = userAddress.Address.Region.CreatedAt,
+                UpdatedAt = userAddress.Address.Region.UpdatedAt
             } : null,
-            AddressType = address.AddressType != null ? new AddressTypeDto
+            AddressType = userAddress.Address.AddressType != null ? new AddressTypeDto
             {
-                Id = address.AddressType.Id,
-                Name = address.AddressType.Name,
-                Description = address.AddressType.Description,
-                Icon = address.AddressType.Icon,
-                CreatedAt = address.AddressType.CreatedAt,
-                UpdatedAt = address.AddressType.UpdatedAt
+                Id = userAddress.Address.AddressType.Id,
+                Name = userAddress.Address.AddressType.Name,
+                Description = userAddress.Address.AddressType.Description,
+                Icon = userAddress.Address.AddressType.Icon,
+                CreatedAt = userAddress.Address.AddressType.CreatedAt,
+                UpdatedAt = userAddress.Address.AddressType.UpdatedAt
             } : null,
-            CreatedAt = address.CreatedAt,
-            UpdatedAt = address.UpdatedAt
+            CreatedAt = userAddress.Address.CreatedAt,
+            UpdatedAt = userAddress.Address.UpdatedAt
         };
 
         return ServiceResult<AddressDto>.Ok(dto);
@@ -119,19 +136,15 @@ public class AddressService(IUnitOfWork unitOfWork) : IAddressService
             return ServiceResult<AddressDto>.Fail("Вказаний тип адреси не існує");
         }
 
+        // Якщо адреса має бути основною, скидаємо прапорець у інших адрес користувача
         if (dto.IsPrimary)
         {
-            var currentUserAddresses = await unitOfWork.Addresses.GetUserAddressesAsync(userId, cancellationToken);
-            foreach (var addr in currentUserAddresses.Where(a => a.IsPrimary))
-            {
-                addr.IsPrimary = false;
-                unitOfWork.Addresses.Update(addr);
-            }
+            await unitOfWork.UserAddresses.ResetPrimaryForUserAsync(userId, cancellationToken);
         }
 
+        // Створюємо адресу
         var address = new Models.Address
         {
-            UserId = userId,
             RegionId = dto.RegionId,
             City = dto.City,
             Street = dto.Street,
@@ -139,121 +152,48 @@ public class AddressService(IUnitOfWork unitOfWork) : IAddressService
             ApartmentNumber = dto.ApartmentNumber,
             ZipCode = dto.ZipCode,
             Notes = dto.Notes,
-            IsPrimary = dto.IsPrimary,
             AddressTypeId = dto.AddressTypeId,
-            User = null!,
             Region = region,
             AddressType = addressType
         };
 
-        var entityEntry = await unitOfWork.Addresses.AddAsync(address);
-        await unitOfWork.CompleteAsync();
+        var addressEntry = await unitOfWork.Addresses.AddAsync(address);
+        await unitOfWork.CompleteAsync(); // Зберігаємо адресу, щоб отримати Id
 
-        var created = entityEntry.Entity;
-        var createdDto = new AddressDto
+        // Створюємо зв'язок User-Address
+        var userAddress = new UserAddress
         {
-            Id = created.Id,
-            UserId = created.UserId,
-            RegionId = created.RegionId,
-            City = created.City,
-            Street = created.Street,
-            BuildingNumber = created.BuildingNumber,
-            ApartmentNumber = created.ApartmentNumber,
-            ZipCode = created.ZipCode,
-            Notes = created.Notes,
-            IsPrimary = created.IsPrimary,
-            AddressTypeId = created.AddressTypeId,
-            Region = created.Region != null ? new RegionDto
-            {
-                Id = created.Region.Id,
-                Name = created.Region.Name,
-                CreatedAt = created.Region.CreatedAt,
-                UpdatedAt = created.Region.UpdatedAt
-            } : null,
-            AddressType = created.AddressType != null ? new AddressTypeDto
-            {
-                Id = created.AddressType.Id,
-                Name = created.AddressType.Name,
-                Description = created.AddressType.Description,
-                Icon = created.AddressType.Icon,
-                CreatedAt = created.AddressType.CreatedAt,
-                UpdatedAt = created.AddressType.UpdatedAt
-            } : null,
-            CreatedAt = created.CreatedAt,
-            UpdatedAt = created.UpdatedAt
+            UserId = userId,
+            AddressId = addressEntry.Entity.Id,
+            IsPrimary = dto.IsPrimary,
+            User = null!,
+            Address = addressEntry.Entity
         };
 
-        return ServiceResult<AddressDto>.Ok(createdDto);
-    }
-
-    public async Task<ServiceResult<AddressDto>> UpdateAsync(int userId, int addressId, UpdateAddressDto dto, CancellationToken cancellationToken)
-    {
-        var address = await unitOfWork.Addresses.GetByIdAsync(addressId);
-        if (address == null)
-        {
-            return ServiceResult<AddressDto>.NotFoundResult("Адресу не знайдено");
-        }
-        if (address.UserId != userId)
-        {
-            return ServiceResult<AddressDto>.ForbiddenResult();
-        }
-
-        var region = await unitOfWork.Regions.GetByIdAsync(dto.RegionId);
-        if (region == null)
-        {
-            return ServiceResult<AddressDto>.Fail("Вказана область не існує");
-        }
-        var addressType = await unitOfWork.AddressTypes.GetByIdAsync(dto.AddressTypeId);
-        if (addressType == null)
-        {
-            return ServiceResult<AddressDto>.Fail("Вказаний тип адреси не існує");
-        }
-
-        if (dto.IsPrimary)
-        {
-            var currentUserAddresses = await unitOfWork.Addresses.GetUserAddressesAsync(userId, cancellationToken);
-            foreach (var addr in currentUserAddresses.Where(a => a.IsPrimary && a.Id != addressId))
-            {
-                addr.IsPrimary = false;
-                unitOfWork.Addresses.Update(addr);
-            }
-        }
-
-        address.RegionId = dto.RegionId;
-        address.ZipCode = dto.ZipCode;
-        address.City = dto.City;
-        address.Street = dto.Street;
-        address.BuildingNumber = dto.BuildingNumber;
-        address.ApartmentNumber = dto.ApartmentNumber;
-        address.Notes = dto.Notes;
-        address.IsPrimary = dto.IsPrimary;
-        address.AddressTypeId = dto.AddressTypeId;
-        address.UpdatedAt = DateTime.UtcNow;
-
-        unitOfWork.Addresses.Update(address);
+        await unitOfWork.UserAddresses.AddAsync(userAddress);
         await unitOfWork.CompleteAsync();
 
-        var updatedDto = new AddressDto
+        var createdDto = new AddressDto
         {
-            Id = address.Id,
-            UserId = address.UserId,
-            RegionId = address.RegionId,
-            ZipCode = address.ZipCode,
-            City = address.City,
-            Street = address.Street,
-            BuildingNumber = address.BuildingNumber,
-            ApartmentNumber = address.ApartmentNumber,
-            Notes = address.Notes,
-            IsPrimary = address.IsPrimary,
-            AddressTypeId = address.AddressTypeId,
-            Region = region != null ? new RegionDto
+            Id = addressEntry.Entity.Id,
+            UserId = userId,
+            RegionId = addressEntry.Entity.RegionId,
+            City = addressEntry.Entity.City,
+            Street = addressEntry.Entity.Street,
+            BuildingNumber = addressEntry.Entity.BuildingNumber,
+            ApartmentNumber = addressEntry.Entity.ApartmentNumber,
+            ZipCode = addressEntry.Entity.ZipCode,
+            Notes = addressEntry.Entity.Notes,
+            IsPrimary = dto.IsPrimary,
+            AddressTypeId = addressEntry.Entity.AddressTypeId,
+            Region = new RegionDto
             {
                 Id = region.Id,
                 Name = region.Name,
                 CreatedAt = region.CreatedAt,
                 UpdatedAt = region.UpdatedAt
-            } : null,
-            AddressType = addressType != null ? new AddressTypeDto
+            },
+            AddressType = new AddressTypeDto
             {
                 Id = addressType.Id,
                 Name = addressType.Name,
@@ -261,7 +201,91 @@ public class AddressService(IUnitOfWork unitOfWork) : IAddressService
                 Icon = addressType.Icon,
                 CreatedAt = addressType.CreatedAt,
                 UpdatedAt = addressType.UpdatedAt
-            } : null,
+            },
+            CreatedAt = addressEntry.Entity.CreatedAt,
+            UpdatedAt = addressEntry.Entity.UpdatedAt
+        };
+
+        return ServiceResult<AddressDto>.Ok(createdDto);
+    }
+
+    public async Task<ServiceResult<AddressDto>> UpdateAsync(int userId, int addressId, UpdateAddressDto dto, CancellationToken cancellationToken)
+    {
+        // Перевіряємо доступ користувача до адреси
+        var userAddress = await unitOfWork.UserAddresses.GetByUserAndAddressAsync(userId, addressId, cancellationToken);
+        if (userAddress == null)
+        {
+            return ServiceResult<AddressDto>.NotFoundResult("Адресу не знайдено або у вас немає доступу до неї");
+        }
+
+        var region = await unitOfWork.Regions.GetByIdAsync(dto.RegionId);
+        if (region == null)
+        {
+            return ServiceResult<AddressDto>.Fail("Вказана область не існує");
+        }
+
+        var addressType = await unitOfWork.AddressTypes.GetByIdAsync(dto.AddressTypeId);
+        if (addressType == null)
+        {
+            return ServiceResult<AddressDto>.Fail("Вказаний тип адреси не існує");
+        }
+
+        // Якщо адреса має стати основною, скидаємо прапорець у інших
+        if (dto.IsPrimary && !userAddress.IsPrimary)
+        {
+            await unitOfWork.UserAddresses.ResetPrimaryForUserAsync(userId, cancellationToken);
+        }
+
+        // Оновлюємо адресу
+        var address = userAddress.Address;
+        address.RegionId = dto.RegionId;
+        address.ZipCode = dto.ZipCode;
+        address.City = dto.City;
+        address.Street = dto.Street;
+        address.BuildingNumber = dto.BuildingNumber;
+        address.ApartmentNumber = dto.ApartmentNumber;
+        address.Notes = dto.Notes;
+        address.AddressTypeId = dto.AddressTypeId;
+        address.UpdatedAt = DateTime.UtcNow;
+
+        unitOfWork.Addresses.Update(address);
+
+        // Оновлюємо UserAddress (IsPrimary)
+        userAddress.IsPrimary = dto.IsPrimary;
+        userAddress.UpdatedAt = DateTime.UtcNow;
+        unitOfWork.UserAddresses.Update(userAddress);
+
+        await unitOfWork.CompleteAsync();
+
+        var updatedDto = new AddressDto
+        {
+            Id = address.Id,
+            UserId = userId,
+            RegionId = address.RegionId,
+            ZipCode = address.ZipCode,
+            City = address.City,
+            Street = address.Street,
+            BuildingNumber = address.BuildingNumber,
+            ApartmentNumber = address.ApartmentNumber,
+            Notes = address.Notes,
+            IsPrimary = userAddress.IsPrimary,
+            AddressTypeId = address.AddressTypeId,
+            Region = new RegionDto
+            {
+                Id = region.Id,
+                Name = region.Name,
+                CreatedAt = region.CreatedAt,
+                UpdatedAt = region.UpdatedAt
+            },
+            AddressType = new AddressTypeDto
+            {
+                Id = addressType.Id,
+                Name = addressType.Name,
+                Description = addressType.Description,
+                Icon = addressType.Icon,
+                CreatedAt = addressType.CreatedAt,
+                UpdatedAt = addressType.UpdatedAt
+            },
             CreatedAt = address.CreatedAt,
             UpdatedAt = address.UpdatedAt
         };
@@ -271,17 +295,25 @@ public class AddressService(IUnitOfWork unitOfWork) : IAddressService
 
     public async Task<ServiceResult<bool>> DeleteAsync(int userId, int addressId, CancellationToken cancellationToken)
     {
-        var address = await unitOfWork.Addresses.GetByIdAsync(addressId);
-        if (address == null)
+        // Перевіряємо доступ
+        var userAddress = await unitOfWork.UserAddresses.GetByUserAndAddressAsync(userId, addressId, cancellationToken);
+        if (userAddress == null)
         {
-            return ServiceResult<bool>.NotFoundResult("Адресу не знайдено");
-        }
-        if (address.UserId != userId)
-        {
-            return ServiceResult<bool>.ForbiddenResult();
+            return ServiceResult<bool>.NotFoundResult("Адресу не знайдено або у вас немає доступу до неї");
         }
 
-        unitOfWork.Addresses.Delete(address);
+        // Видаляємо зв'язок (не саму адресу, бо вона може бути спільною)
+        unitOfWork.UserAddresses.Delete(userAddress);
+
+        // Перевіряємо, чи є ще користувачі, які використовують цю адресу
+        var address = await unitOfWork.Addresses.GetByIdAsync(addressId);
+        if (address?.UserAddresses != null && address.UserAddresses.Count <= 1)
+        {
+            // Якщо це був останній користувач, видаляємо адресу (soft delete)
+            address.DeletedAt = DateTime.UtcNow;
+            unitOfWork.Addresses.Update(address);
+        }
+
         await unitOfWork.CompleteAsync();
         return ServiceResult<bool>.Ok(true);
     }

@@ -8,6 +8,7 @@ using KomunalkaAPI.Repositories.RefreshToken;
 using KomunalkaAPI.Repositories.MeterReadingImage;
 using KomunalkaAPI.Repositories.ServiceCounter;
 using KomunalkaAPI.Repositories.ServiceCounterValue;
+using KomunalkaAPI.Repositories.UserAddress;
 using Microsoft.EntityFrameworkCore;
 
 namespace KomunalkaAPI.Repositories;
@@ -16,6 +17,7 @@ public class UnitOfWork(DbContext context) : IUnitOfWork
 {
     public IUserRepository Users { get; } = new UserRepository(context);
     public IAddressRepository Addresses { get; } = new AddressRepository(context);
+    public IUserAddressRepository UserAddresses { get; } = new UserAddressRepository(context);
     public IServiceCategoryRepository ServiceCategories { get; } = new ServiceCategoryRepository(context);
     public ICurrencyRepository Currencies { get; } = new CurrencyRepository(context);
     public IRegionRepository Regions { get; } = new RegionRepository(context);

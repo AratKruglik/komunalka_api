@@ -1,11 +1,9 @@
-using AutoMapper;
+using KomunalkaAPI.DTO;
 using KomunalkaAPI.Extensions;
 using KomunalkaAPI.Models.Pagination;
 using KomunalkaAPI.Models.Responses;
-using KomunalkaAPI.Repositories;
+using KomunalkaAPI.Services.Address;
 using Microsoft.AspNetCore.Mvc;
-using KomunalkaAPI.Models;
-using KomunalkaAPI.DTO;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
@@ -15,10 +13,15 @@ namespace KomunalkaAPI.Controllers;
 [Route("api/v{version:apiVersion}/[controller]")]
 [Asp.Versioning.ApiVersion("1.0")]
 [Authorize]
-public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : ControllerBase
+public class AddressController(IAddressService addressService) : ControllerBase
 {
     [HttpGet(Name = "addresses")]
-    public async Task<ActionResult<PaginatedResponse<AddressDto>>> GetAll([FromQuery] PaginationParams paginationParams)
+    public async Task<ActionResult<PaginatedResponse<AddressDto>>> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int perPage = 15,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] bool desc = false,
+        CancellationToken cancellationToken = default)
     {
         // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
@@ -27,29 +30,26 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
             return Unauthorized("Invalid user token");
         }
 
-        // Get all addresses with pagination
-        var pagedAddresses = await unitOfWork.Addresses.GetPagedAsync(paginationParams);
-
-        // Filter addresses only for current user
-        var userAddresses = pagedAddresses.Items.Where(a => a.UserId == userId).ToList();
-        var addressDtos = mapper.Map<List<AddressDto>>(userAddresses);
+        var skip = (page - 1) * perPage;
+        var (items, totalCount, lastUpdatedFileTimeUtc) = await addressService.GetForUserAsync(
+            userId, skip, perPage, sortBy, desc, cancellationToken);
 
         var pagedResult = new PagedResult<AddressDto>
         {
-            Items = addressDtos,
-            PageNumber = pagedAddresses.PageNumber,
-            PageSize = pagedAddresses.PageSize,
-            TotalCount = pagedAddresses.Items.Count(a => a.UserId == userId) // Count of user addresses
+            Items = items.ToList(),
+            PageNumber = page,
+            PageSize = perPage,
+            TotalCount = totalCount
         };
 
         // Convert to Laravel-compatible format
-        var response = pagedResult.ToPaginatedResponse(addressDtos, Request);
+        var response = pagedResult.ToPaginatedResponse(items.ToList(), Request);
 
         return Ok(response);
     }
 
     [HttpGet("{id:int}", Name = "address")]
-    public async Task<ActionResult<AddressDto>> GetById(int id)
+    public async Task<ActionResult<AddressDto>> GetById(int id, CancellationToken cancellationToken)
     {
         // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
@@ -58,26 +58,22 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
             return Unauthorized("Invalid user token");
         }
 
-        var address = await unitOfWork.Addresses.GetByIdAsync(id);
+        var result = await addressService.GetByIdForUserAsync(userId, id, cancellationToken);
 
-        if (address == null)
+        if (!result.Success)
         {
-            return NotFound("Address not found");
+            if (result.NotFound)
+                return NotFound(result.Errors.FirstOrDefault());
+            if (result.Forbidden)
+                return Forbid();
+            return BadRequest(result.Errors);
         }
 
-        // Check if the address belongs to the current user
-        if (address.UserId != userId)
-        {
-            return Forbid("You don't have access to this address");
-        }
-
-        var addressDto = mapper.Map<AddressDto>(address);
-
-        return Ok(addressDto);
+        return Ok(result.Data);
     }
 
     [HttpPost(Name = "createAddress")]
-    public async Task<ActionResult<AddressDto>> Create(CreateAddressDto createAddressDto)
+    public async Task<ActionResult<AddressDto>> Create(CreateAddressDto createAddressDto, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
@@ -91,49 +87,24 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
             return Unauthorized("Invalid user token");
         }
 
-        // Check if Region and AddressType exist
-        var region = await unitOfWork.Regions.GetByIdAsync(createAddressDto.RegionId);
-        if (region == null)
+        var result = await addressService.CreateAsync(userId, createAddressDto, cancellationToken);
+
+        if (!result.Success)
         {
-            return BadRequest("Specified region does not exist");
+            return BadRequest(result.Errors);
         }
 
-        var addressType = await unitOfWork.AddressTypes.GetByIdAsync(createAddressDto.AddressTypeId);
-        if (addressType == null)
-        {
-            return BadRequest("Specified address type does not exist");
-        }
-
-        // If this is primary address, set all other user addresses as non-primary
-        if (createAddressDto.IsPrimary)
-        {
-            var userAddresses = await unitOfWork.Addresses.GetAllAsync();
-            var currentUserAddresses = userAddresses.Where(a => a.UserId == userId && a.IsPrimary);
-            foreach (var addr in currentUserAddresses)
-            {
-                addr.IsPrimary = false;
-                unitOfWork.Addresses.Update(addr);
-            }
-        }
-
-        var address = mapper.Map<Address>(createAddressDto);
-        address.UserId = userId;
-        address.User = null!; // Will be populated by EF
-        address.Region = region;
-        address.AddressType = addressType;
-
-        var entityEntry = await unitOfWork.Addresses.AddAsync(address);
-        await unitOfWork.CompleteAsync();
-
-        var createdAddress = entityEntry.Entity;
-        var createdAddressDto = mapper.Map<AddressDto>(createdAddress);
-
-        return CreatedAtRoute("address", new { id = createdAddressDto.Id }, createdAddressDto);
+        return CreatedAtRoute("address", new { id = result.Data!.Id }, result.Data);
     }
 
     [HttpPut("{id:int}", Name = "updateAddress")]
-    public async Task<ActionResult<AddressDto>> Update(int id, AddressDto addressDto)
+    public async Task<ActionResult<AddressDto>> Update(int id, UpdateAddressDto updateAddressDto, CancellationToken cancellationToken)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
@@ -141,34 +112,22 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
             return Unauthorized("Invalid user token");
         }
 
-        var address = await unitOfWork.Addresses.GetByIdAsync(id);
+        var result = await addressService.UpdateAsync(userId, id, updateAddressDto, cancellationToken);
 
-        if (address == null)
+        if (!result.Success)
         {
-            return NotFound("Address not found");
+            if (result.NotFound)
+                return NotFound(result.Errors.FirstOrDefault());
+            if (result.Forbidden)
+                return Forbid();
+            return BadRequest(result.Errors);
         }
 
-        // Check if the address belongs to the current user
-        if (address.UserId != userId)
-        {
-            return Forbid("You don't have access to this address");
-        }
-
-        // Don't allow changing UserId - address always belongs to current user
-        mapper.Map(addressDto, address);
-        address.UserId = userId; // Ensure UserId doesn't change
-        address.UpdatedAt = DateTime.UtcNow;
-
-        unitOfWork.Addresses.Update(address);
-        await unitOfWork.CompleteAsync();
-
-        var updatedAddressDto = mapper.Map<AddressDto>(address);
-
-        return Ok(updatedAddressDto);
+        return Ok(result.Data);
     }
 
     [HttpDelete("{id:int}", Name = "deleteAddress")]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         // Get current user ID from JWT token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
@@ -177,21 +136,16 @@ public class AddressController(IUnitOfWork unitOfWork, IMapper mapper) : Control
             return Unauthorized("Invalid user token");
         }
 
-        var address = await unitOfWork.Addresses.GetByIdAsync(id);
+        var result = await addressService.DeleteAsync(userId, id, cancellationToken);
 
-        if (address == null)
+        if (!result.Success)
         {
-            return NotFound("Address not found");
+            if (result.NotFound)
+                return NotFound(result.Errors.FirstOrDefault());
+            if (result.Forbidden)
+                return Forbid();
+            return BadRequest(result.Errors);
         }
-
-        // Check if the address belongs to the current user
-        if (address.UserId != userId)
-        {
-            return Forbid("You don't have access to this address");
-        }
-
-        unitOfWork.Addresses.Delete(address);
-        await unitOfWork.CompleteAsync();
 
         return NoContent();
     }

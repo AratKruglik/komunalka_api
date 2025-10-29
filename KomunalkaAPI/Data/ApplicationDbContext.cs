@@ -21,6 +21,7 @@ namespace KomunalkaAPI.Data
         public DbSet<UtilityType> UtilityTypes { get; set; }
         public DbSet<Meter> Meters { get; set; }
         public DbSet<MeterReadingImage> MeterReadingImages { get; set; }
+        public DbSet<UserAddress> UserAddresses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,6 +34,24 @@ namespace KomunalkaAPI.Data
             // Laravel uses alphabetical order: address_service_category (not addresses_service_categories)
             modelBuilder.Entity<AddressesServiceCategory>()
                 .ToTable("address_service_category");
+
+            // Configure UserAddress many-to-many relationship
+            modelBuilder.Entity<UserAddress>()
+                .HasOne(ua => ua.User)
+                .WithMany(u => u.UserAddresses)
+                .HasForeignKey(ua => ua.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserAddress>()
+                .HasOne(ua => ua.Address)
+                .WithMany(a => a.UserAddresses)
+                .HasForeignKey(ua => ua.AddressId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Composite unique index to prevent duplicate user-address pairs
+            modelBuilder.Entity<UserAddress>()
+                .HasIndex(ua => new { ua.UserId, ua.AddressId })
+                .IsUnique();
         }
     }
 }

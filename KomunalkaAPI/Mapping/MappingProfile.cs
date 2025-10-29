@@ -18,9 +18,12 @@ public class MappingProfile : Profile
 
         CreateMap<CreateAddressDto, Address>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
-            .ForMember(dest => dest.User, opt => opt.Ignore())
+            .ForMember(dest => dest.UserAddresses, opt => opt.Ignore())
             .ForMember(dest => dest.Region, opt => opt.Ignore())
             .ForMember(dest => dest.AddressType, opt => opt.Ignore())
+            .ForMember(dest => dest.ServiceCounters, opt => opt.Ignore())
+            .ForMember(dest => dest.AddressesServiceCategories, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
             .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore());
 

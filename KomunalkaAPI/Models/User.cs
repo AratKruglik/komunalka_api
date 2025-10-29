@@ -22,7 +22,7 @@ public class User
     [StringLength(255, ErrorMessage = "Email is too long")]
     public required string Email { get; set; }
 
-    public List<Address>? Addresses { get; set; }
+    public List<UserAddress>? UserAddresses { get; set; }
 
     [StringLength(50, ErrorMessage = "Role is too long")]
     public string? Role { get; set; } = "User";

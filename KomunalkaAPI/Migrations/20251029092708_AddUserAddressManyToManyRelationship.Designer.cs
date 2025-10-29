@@ -3,6 +3,7 @@ using System;
 using KomunalkaAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KomunalkaAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251029092708_AddUserAddressManyToManyRelationship")]
+    partial class AddUserAddressManyToManyRelationship
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -702,15 +705,15 @@ namespace KomunalkaAPI.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_address_user");
+                        .HasName("pk_user_addresses");
 
                     b.HasIndex("AddressId")
-                        .HasDatabaseName("ix_address_user_address_id");
+                        .HasDatabaseName("ix_user_addresses_address_id");
 
                     b.HasIndex("UserId", "AddressId")
                         .IsUnique();
 
-                    b.ToTable("address_user");
+                    b.ToTable("user_addresses");
                 });
 
             modelBuilder.Entity("KomunalkaAPI.Models.UtilityType", b =>
@@ -922,14 +925,14 @@ namespace KomunalkaAPI.Migrations
                         .HasForeignKey("AddressId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_address_user_addresses_address_id");
+                        .HasConstraintName("fk_user_addresses_addresses_address_id");
 
                     b.HasOne("KomunalkaAPI.Models.User", "User")
                         .WithMany("UserAddresses")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_address_user_users_user_id");
+                        .HasConstraintName("fk_user_addresses_users_user_id");
 
                     b.Navigation("Address");
 
