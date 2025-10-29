@@ -1,67 +1,46 @@
-name: CI Build and Test
+name: CI
 
 on:
   push:
-    branches: [ master, develop, feature/** ]
+    branches: ['**']
   pull_request:
-    branches: [ master, develop ]
-  workflow_dispatch:
-    inputs:
-      run_tests:
-        description: 'Run tests'
-        required: false
-        default: 'true'
-        type: boolean
-      configuration:
-        description: 'Build configuration'
-        required: false
-        default: 'Release'
-        type: choice
-        options:
-          - Release
-          - Debug
-  schedule:
-    # Запуск щоночі о 02:00 UTC (04:00 Kyiv time)
-    - cron: '0 2 * * *'
 
 jobs:
   build-and-test:
-    name: Build and Test
     runs-on: ubuntu-latest
 
     services:
       postgres:
-        image: postgres:17
+        image: postgres:17-alpine
         env:
           POSTGRES_DB: komunalka_test
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd pg_isready -U postgres
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Setup .NET
+    - name: Set up .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x'
+        dotnet-version: 9.0.x
 
-    - name: Restore dependencies
+    - name: Restore
       run: dotnet restore
 
     - name: Build
-      run: dotnet build --no-restore --configuration ${{ inputs.configuration || 'Release' }}
+      run: dotnet build --configuration Release --no-restore
 
-    - name: Create .env file for tests
+    - name: Prepare env for tests
       run: |
-        cat > .env << EOF
+        cat <<'EOF' > .env
         POSTGRES_HOST=localhost
         POSTGRES_PORT=5432
         POSTGRES_DATABASE=komunalka_test
@@ -74,33 +53,7 @@ jobs:
         JWT_REFRESH_TOKEN_EXPIRATION_DAYS=7
         EOF
 
-    - name: Run tests
-      if: ${{ inputs.run_tests != 'false' }}
-      run: dotnet test --no-build --configuration ${{ inputs.configuration || 'Release' }} --verbosity normal
+    - name: Test
+      run: dotnet test --configuration Release --no-build --verbosity normal
       env:
         ASPNETCORE_ENVIRONMENT: Development
-
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results
-        path: '**/TestResults/**'
-        retention-days: 7
-
-    - name: Send Telegram notification
-      if: always() && (github.event_name == 'push' || github.event_name == 'schedule')
-      uses: appleboy/telegram-action@master
-      with:
-        to: ${{ secrets.TELEGRAM_CHAT_ID }}
-        token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        format: markdown
-        message: |
-          ${{ job.status == 'success' && '✅' || '❌' }} **CI Build ${{ job.status == 'success' && 'Passed' || 'Failed' }}**
-
-          Repository: `${{ github.repository }}`
-          Branch: `${{ github.ref_name }}`
-          Commit: `${{ github.event.head_commit.message }}`
-          Author: ${{ github.event.head_commit.author.name }}
-
-          [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
