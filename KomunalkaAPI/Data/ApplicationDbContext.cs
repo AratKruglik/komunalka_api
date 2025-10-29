@@ -52,6 +52,13 @@ namespace KomunalkaAPI.Data
             modelBuilder.Entity<UserAddress>()
                 .HasIndex(ua => new { ua.UserId, ua.AddressId })
                 .IsUnique();
+
+            // Partial unique index to ensure only ONE primary address per user
+            // This prevents multiple is_primary=true for the same user
+            modelBuilder.Entity<UserAddress>()
+                .HasIndex(ua => ua.UserId)
+                .IsUnique()
+                .HasFilter("is_primary = true");
         }
     }
 }

@@ -147,6 +147,8 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // Services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.Users.IUserService, KomunalkaAPI.Services.Users.UsersService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.Address.IAddressService, KomunalkaAPI.Services.Address.AddressService>();
 builder.Services.AddScoped<KomunalkaAPI.Services.Image.IFileStorageService, KomunalkaAPI.Services.Image.FileStorageService>();
 builder.Services.AddScoped<KomunalkaAPI.Services.Image.IImageService, KomunalkaAPI.Services.Image.ImageService>();
 
@@ -256,6 +258,12 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("Seeding database...");
         await KomunalkaAPI.Data.SeedData.SeedAsync(context);
         logger.LogInformation("Database seeded successfully");
+    }
+    catch (System.Net.Sockets.SocketException ex)
+    {
+        logger.LogWarning(ex, "Database is not available. Skipping migrations and seeding. " +
+            "Make sure the database is running or update POSTGRES_HOST in .env file.");
+        logger.LogWarning("Application will continue but database operations will fail until database is available.");
     }
     catch (Exception ex)
     {
