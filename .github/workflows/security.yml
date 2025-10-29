@@ -1,0 +1,156 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+  workflow_dispatch:
+  schedule:
+    # Запуск щовівторка о 04:00 UTC (06:00 Kyiv time)
+    - cron: '0 4 * * 2'
+
+jobs:
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Run .NET security audit
+      run: dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerability-report.txt
+
+    - name: Check for vulnerabilities
+      id: vuln_check
+      run: |
+        if grep -q "has the following vulnerable packages" vulnerability-report.txt; then
+          echo "vulnerabilities=true" >> $GITHUB_OUTPUT
+          echo "⚠️ Vulnerabilities found!"
+        else
+          echo "vulnerabilities=false" >> $GITHUB_OUTPUT
+          echo "✅ No vulnerabilities found"
+        fi
+
+    - name: Upload vulnerability report
+      if: steps.vuln_check.outputs.vulnerabilities == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: vulnerability-report
+        path: vulnerability-report.txt
+        retention-days: 30
+
+    - name: Send Telegram notification on vulnerabilities
+      if: steps.vuln_check.outputs.vulnerabilities == 'true'
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_CHAT_ID }}
+        token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        format: markdown
+        message: |
+          🔒 **Security Alert: Vulnerabilities Detected**
+
+          Repository: `${{ github.repository }}`
+          Branch: `${{ github.ref_name }}`
+
+          Vulnerable dependencies found in the project.
+          Please review the vulnerability report.
+
+          [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+  docker-scan:
+    name: Docker Image Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Build Docker image
+      run: docker build -t komunalka-api:scan .
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: komunalka-api:scan
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+
+    - name: Upload Trivy results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v4
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Run Trivy vulnerability scanner (table output)
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: komunalka-api:scan
+        format: 'table'
+        severity: 'CRITICAL,HIGH'
+        exit-code: '0'
+
+    - name: Send Telegram notification on critical issues
+      if: failure()
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_CHAT_ID }}
+        token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        format: markdown
+        message: |
+          🐳 **Docker Security Scan: Critical Issues Found**
+
+          Repository: `${{ github.repository }}`
+          Branch: `${{ github.ref_name }}`
+
+          Critical or high severity vulnerabilities found in Docker image.
+
+          [View results](${{ github.server_url }}/${{ github.repository }}/security/code-scanning)
+          [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+  secrets-scan:
+    name: Secrets Detection Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+
+    - name: Run Gitleaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Send Telegram notification on secrets found
+      if: failure()
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_CHAT_ID }}
+        token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        format: markdown
+        message: |
+          🔑 **Security Alert: Potential Secrets Detected**
+
+          Repository: `${{ github.repository }}`
+          Branch: `${{ github.ref_name }}`
+
+          Potential secrets or credentials found in the codebase.
+          Please review immediately!
+
+          [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})

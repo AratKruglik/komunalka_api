@@ -1,0 +1,70 @@
+name: Deploy to Server
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      skip_tests:
+        description: 'Skip tests before deployment'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run tests
+      if: ${{ !inputs.skip_tests }}
+      run: dotnet test --no-build --configuration Release --verbosity normal
+
+    - name: Publish application
+      run: dotnet publish --no-build --configuration Release --output ./publish
+
+    - name: Deploy to ${{ inputs.environment }}
+      run: |
+        echo "Deploying to ${{ inputs.environment }}..."
+        # TODO: Add actual deployment commands
+        # Example: rsync, scp, docker deploy, k8s apply, etc.
+        echo "Deployment completed!"
+
+    - name: Send Telegram notification
+      if: always()
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_CHAT_ID }}
+        token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        format: markdown
+        message: |
+          🚀 **Deployment to ${{ inputs.environment }}**
+
+          Repository: `${{ github.repository }}`
+          Branch: `${{ github.ref_name }}`
+          Commit: `${{ github.sha }}`
+          Status: ${{ job.status }}
+
+          Triggered by: @${{ github.actor }}
+          [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})

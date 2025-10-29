@@ -1,0 +1,101 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run tests
+      run: dotnet test --no-build --configuration Release --verbosity normal
+
+    - name: Publish Linux x64
+      run: dotnet publish --configuration Release --runtime linux-x64 --self-contained false --output ./artifacts/linux-x64
+
+    - name: Publish Windows x64
+      run: dotnet publish --configuration Release --runtime win-x64 --self-contained false --output ./artifacts/win-x64
+
+    - name: Publish macOS x64
+      run: dotnet publish --configuration Release --runtime osx-x64 --self-contained false --output ./artifacts/osx-x64
+
+    - name: Create archives
+      run: |
+        cd ./artifacts
+        tar -czf komunalka-api-linux-x64.tar.gz -C linux-x64 .
+        zip -r komunalka-api-windows-x64.zip win-x64/
+        tar -czf komunalka-api-macos-x64.tar.gz -C osx-x64 .
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        echo "## What's Changed" > CHANGELOG.md
+        git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s (%h)" >> CHANGELOG.md || echo "- Initial release" >> CHANGELOG.md
+
+    - name: Get tag name
+      id: tag
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+        else
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.tag.outputs.tag }}
+        name: Release ${{ steps.tag.outputs.tag }}
+        body_path: CHANGELOG.md
+        prerelease: ${{ inputs.prerelease || false }}
+        files: |
+          ./artifacts/komunalka-api-linux-x64.tar.gz
+          ./artifacts/komunalka-api-windows-x64.zip
+          ./artifacts/komunalka-api-macos-x64.tar.gz
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Send Telegram notification
+      if: always()
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_CHAT_ID }}
+        token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        format: markdown
+        message: |
+          📦 **New Release: ${{ steps.tag.outputs.tag }}**
+
+          Repository: `${{ github.repository }}`
+          Status: ${{ job.status }}
+          Pre-release: ${{ inputs.prerelease || false }}
+
+          [View Release](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ steps.tag.outputs.tag }})
+          [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
