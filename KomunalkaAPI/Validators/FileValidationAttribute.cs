@@ -59,23 +59,24 @@ public class FileValidationAttribute : ValidationAttribute
         try
         {
             using var stream = file.OpenReadStream();
-            Span<byte> header = stackalloc byte[12];
 
-            if (!TryReadHeader(stream, header))
+            var buffer = new byte[12];
+
+            if (!TryReadHeader(stream, buffer))
             {
                 return false;
             }
 
-            if (IsJpeg(header))
+            if (IsJpeg(buffer))
                 return true;
 
-            if (IsPng(header))
+            if (IsPng(buffer))
                 return true;
 
-            if (IsWebp(header))
+            if (IsWebp(buffer))
                 return true;
 
-            if (IsHeic(header))
+            if (IsHeic(buffer))
                 return true;
 
             return false;
