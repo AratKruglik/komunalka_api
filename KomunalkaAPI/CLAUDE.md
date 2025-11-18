@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Komunalka API is an ASP.NET Core (.NET 9.0) API for managing utility services, bills, and meter readings. The project uses PostgreSQL with Entity Framework Core and implements JWT authentication.
+Komunalka API is an ASP.NET Core (.NET 10.0) API for managing utility services, bills, and meter readings. The project uses PostgreSQL with Entity Framework Core and implements JWT authentication.
 
 ## Tech Stack
 
-- **Framework**: ASP.NET Core (.NET 9.0)
+- **Framework**: ASP.NET Core (.NET 10.0)
 - **Language**: C# 13.0
 - **Database**: PostgreSQL 17
-- **ORM**: Entity Framework Core 9.0
+- **ORM**: Entity Framework Core 10.0
 - **Authentication**: JWT with refresh tokens
 - **Password Hashing**: BCrypt.Net-Next
 - **Environment Variables**: DotNetEnv
