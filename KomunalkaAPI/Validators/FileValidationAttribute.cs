@@ -61,32 +61,22 @@ public class FileValidationAttribute : ValidationAttribute
             using var stream = file.OpenReadStream();
 
             var buffer = new byte[12];
-            stream.ReadExactly(buffer, 0, buffer.Length);
 
-            if (!TryReadHeader(stream, header))
+            if (!TryReadHeader(stream, buffer))
             {
                 return false;
             }
 
-            if (IsJpeg(header))
+            if (IsJpeg(buffer))
                 return true;
 
-            // Check for WebP signature (52 49 46 46 ... 57 45 42 50)
-            if (buffer[0] == 0x52 && buffer[1] == 0x49 && buffer[2] == 0x46 && buffer[3] == 0x46)
-            {
-                stream.Seek(8, SeekOrigin.Begin);
-                stream.ReadExactly(buffer, 0, 4);
-                if (buffer[0] == 0x57 && buffer[1] == 0x45 && buffer[2] == 0x42 && buffer[3] == 0x50)
-                    return true;
-            }
+            if (IsPng(buffer))
+                return true;
 
-            // Check for HEIC/HEIF signature
-            // HEIC files start with: 00 00 00 [size] 66 74 79 70 (ftyp)
-            // Followed by: 68 65 69 63 (heic) or 68 65 69 78 (heix) or 6D 69 66 31 (mif1)
-            stream.Seek(0, SeekOrigin.Begin);
-            stream.ReadExactly(buffer, 0, 12);
+            if (IsWebp(buffer))
+                return true;
 
-            if (IsHeic(header))
+            if (IsHeic(buffer))
                 return true;
 
             return false;
