@@ -129,6 +129,7 @@ Authorization: Bearer {{jwt_token}}
 
 # Create new address (requires authentication)
 # If isPrimary is true, all other addresses for this user will be marked as non-primary
+# addressTypeId: 1 = Квартира, 2 = Приватний будинок, 3 = Офіс
 POST {{KomunalkaAPI_HostAddress}}/address
 Content-Type: application/json
 Authorization: Bearer {{jwt_token}}
@@ -150,6 +151,7 @@ Authorization: Bearer {{jwt_token}}
 # Update address (requires authentication)
 # If isPrimary is changed to true, all other addresses for this user will be marked as non-primary
 # Only updates the address if current user has access to it
+# addressTypeId: 1 = Квартира, 2 = Приватний будинок, 3 = Офіс
 PUT {{KomunalkaAPI_HostAddress}}/address/1
 Content-Type: application/json
 Authorization: Bearer {{jwt_token}}
@@ -189,6 +191,8 @@ Accept: application/json
 Authorization: Bearer {{jwt_token}}
 
 ### Address Type Management Endpoints
+# Updated: Address types now have Ukrainian names
+# Available types: Квартира (1), Приватний будинок (2), Офіс (3)
 
 # Get all address types (requires authentication)
 GET {{KomunalkaAPI_HostAddress}}/addresstype
@@ -198,6 +202,7 @@ Authorization: Bearer {{jwt_token}}
 ###
 
 # Get address type by ID (requires authentication)
+# Example: ID 1 = "Квартира", ID 2 = "Приватний будинок", ID 3 = "Офіс"
 GET {{KomunalkaAPI_HostAddress}}/addresstype/1
 Accept: application/json
 Authorization: Bearer {{jwt_token}}
@@ -364,6 +369,15 @@ GET http://localhost:8080/health/ready
 # - Each user has independent isPrimary flag for their addresses
 # - Setting isPrimary=true auto-resets other addresses for that user
 # - Database uses Laravel naming convention: address_user pivot table
+#
+# Address Types (Updated to Ukrainian):
+# - ID 1: "Квартира" (Багатоквартирний будинок у місті)
+# - ID 2: "Приватний будинок" (Окрема садиба або дача)
+# - ID 3: "Офіс" (Комерційне або офісне приміщення)
+#
+# Regions:
+# - 26 Ukrainian regions available (області України)
+# - Use GET /api/v1/region to get full list with IDs
 #
 # CORS:
 # - Configured to allow origins from environment variable
