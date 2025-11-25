@@ -9,6 +9,8 @@ using KomunalkaAPI.Repositories.MeterReadingImage;
 using KomunalkaAPI.Repositories.ServiceCounter;
 using KomunalkaAPI.Repositories.ServiceCounterValue;
 using KomunalkaAPI.Repositories.UserAddress;
+using KomunalkaAPI.Repositories.Meter;
+using KomunalkaAPI.Repositories.ServiceProvider;
 
 namespace KomunalkaAPI.Repositories;
 
@@ -25,5 +27,7 @@ public interface IUnitOfWork : IDisposable
     IMeterReadingImageRepository MeterReadingImages { get; }
     IServiceCounterRepository ServiceCounters { get; }
     IServiceCounterValueRepository ServiceCounterValues { get; }
+    IMeterRepository Meters { get; }
+    IServiceProviderRepository ServiceProviders { get; }
     Task<int> CompleteAsync();
 }

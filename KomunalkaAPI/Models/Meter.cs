@@ -33,6 +33,30 @@ public class Meter
     [Column("description")]
     public string? Description { get; set; }
 
+    [StringLength(255)]
+    [Column("model_name")]
+    public string? ModelName { get; set; }
+
+    [StringLength(500)]
+    [Column("location")]
+    public string? Location { get; set; }
+
+    [StringLength(500)]
+    [Column("photo_path")]
+    public string? PhotoPath { get; set; }
+
+    [Column("installation_date")]
+    public DateTime? InstallationDate { get; set; }
+
+    [Column("initial_reading", TypeName = "decimal(18,2)")]
+    public decimal? InitialReading { get; set; }
+
+    [Column("service_provider_id")]
+    public int? ServiceProviderId { get; set; }
+
+    [Column("notes")]
+    public string? Notes { get; set; }
+
     [Column("is_active")]
     public bool IsActive { get; set; } = true;
 
@@ -48,6 +72,9 @@ public class Meter
 
     [ForeignKey(nameof(UtilityTypeId))]
     public virtual UtilityType UtilityType { get; set; } = null!;
+
+    [ForeignKey(nameof(ServiceProviderId))]
+    public virtual ServiceProvider? ServiceProvider { get; set; }
 
     public virtual ICollection<Tariff> Tariffs { get; set; } = new List<Tariff>();
 }
