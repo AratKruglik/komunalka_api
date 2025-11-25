@@ -56,4 +56,9 @@ public class Repository<T>(DbContext context) : IRepository<T> where T : class
     {
         await _context.SaveChangesAsync();
     }
+
+    public DbContext GetContext()
+    {
+        return _context;
+    }
 }

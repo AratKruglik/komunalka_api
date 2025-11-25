@@ -75,6 +75,4 @@ public class Meter
 
     [ForeignKey(nameof(ServiceProviderId))]
     public virtual ServiceProvider? ServiceProvider { get; set; }
-
-    public virtual ICollection<Tariff> Tariffs { get; set; } = new List<Tariff>();
 }

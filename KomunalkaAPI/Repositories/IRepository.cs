@@ -1,4 +1,5 @@
 using KomunalkaAPI.Models.Pagination;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace KomunalkaAPI.Repositories;
@@ -12,4 +13,5 @@ public interface IRepository<T> where T : class
     void Update(T entity);
     void Delete(T entity);
     Task SaveChangesAsync();
+    DbContext GetContext();
 }

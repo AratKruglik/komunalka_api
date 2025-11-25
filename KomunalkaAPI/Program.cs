@@ -147,6 +147,8 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // Services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.Tariff.ITariffCalculationService, KomunalkaAPI.Services.Tariff.TariffCalculationService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.MeterReading.IMeterReadingService, KomunalkaAPI.Services.MeterReading.MeterReadingService>();
 builder.Services.AddScoped<KomunalkaAPI.Services.Users.IUserService, KomunalkaAPI.Services.Users.UsersService>();
 builder.Services.AddScoped<KomunalkaAPI.Services.Address.IAddressService, KomunalkaAPI.Services.Address.AddressService>();
 builder.Services.AddScoped<KomunalkaAPI.Services.Image.IFileStorageService, KomunalkaAPI.Services.Image.FileStorageService>();

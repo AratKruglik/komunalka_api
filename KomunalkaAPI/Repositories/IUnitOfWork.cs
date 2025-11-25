@@ -11,6 +11,8 @@ using KomunalkaAPI.Repositories.ServiceCounterValue;
 using KomunalkaAPI.Repositories.UserAddress;
 using KomunalkaAPI.Repositories.Meter;
 using KomunalkaAPI.Repositories.ServiceProvider;
+using KomunalkaAPI.Repositories.MeterReading;
+using Microsoft.EntityFrameworkCore;
 
 namespace KomunalkaAPI.Repositories;
 
@@ -29,5 +31,7 @@ public interface IUnitOfWork : IDisposable
     IServiceCounterValueRepository ServiceCounterValues { get; }
     IMeterRepository Meters { get; }
     IServiceProviderRepository ServiceProviders { get; }
+    IMeterReadingRepository MeterReadings { get; }
     Task<int> CompleteAsync();
+    DbContext GetContext();
 }

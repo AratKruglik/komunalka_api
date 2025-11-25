@@ -14,8 +14,12 @@ public class Tariff
     public int Id { get; set; }
 
     [Required]
-    [Column("meter_id")]
-    public int MeterId { get; set; }
+    [Column("service_provider_id")]
+    public int ServiceProviderId { get; set; }
+
+    [Required]
+    [Column("utility_type_id")]
+    public int UtilityTypeId { get; set; }
 
     [Required]
     [Column("currency_id")]
@@ -50,8 +54,11 @@ public class Tariff
     public DateTime? UpdatedAt { get; set; }
 
     // Navigation properties
-    [ForeignKey(nameof(MeterId))]
-    public virtual Meter Meter { get; set; } = null!;
+    [ForeignKey(nameof(ServiceProviderId))]
+    public virtual ServiceProvider ServiceProvider { get; set; } = null!;
+
+    [ForeignKey(nameof(UtilityTypeId))]
+    public virtual UtilityType UtilityType { get; set; } = null!;
 
     [ForeignKey(nameof(CurrencyId))]
     public virtual Currency Currency { get; set; } = null!;

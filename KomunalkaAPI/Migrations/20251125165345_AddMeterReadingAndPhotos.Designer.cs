@@ -3,6 +3,7 @@ using System;
 using KomunalkaAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KomunalkaAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251125165345_AddMeterReadingAndPhotos")]
+    partial class AddMeterReadingAndPhotos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -796,6 +799,10 @@ namespace KomunalkaAPI.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("effective_to");
 
+                    b.Property<int>("MeterId")
+                        .HasColumnType("integer")
+                        .HasColumnName("meter_id");
+
                     b.Property<string>("Notes")
                         .HasColumnType("text")
                         .HasColumnName("notes");
@@ -810,17 +817,9 @@ namespace KomunalkaAPI.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("service_fee");
 
-                    b.Property<int>("ServiceProviderId")
-                        .HasColumnType("integer")
-                        .HasColumnName("service_provider_id");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
-
-                    b.Property<int>("UtilityTypeId")
-                        .HasColumnType("integer")
-                        .HasColumnName("utility_type_id");
 
                     b.HasKey("Id")
                         .HasName("pk_tariffs");
@@ -828,11 +827,8 @@ namespace KomunalkaAPI.Migrations
                     b.HasIndex("CurrencyId")
                         .HasDatabaseName("ix_tariffs_currency_id");
 
-                    b.HasIndex("ServiceProviderId")
-                        .HasDatabaseName("ix_tariffs_service_provider_id");
-
-                    b.HasIndex("UtilityTypeId")
-                        .HasDatabaseName("ix_tariffs_utility_type_id");
+                    b.HasIndex("MeterId")
+                        .HasDatabaseName("ix_tariffs_meter_id");
 
                     b.ToTable("tariffs");
                 });
@@ -1153,25 +1149,16 @@ namespace KomunalkaAPI.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_tariffs_currencies_currency_id");
 
-                    b.HasOne("KomunalkaAPI.Models.ServiceProvider", "ServiceProvider")
+                    b.HasOne("KomunalkaAPI.Models.Meter", "Meter")
                         .WithMany("Tariffs")
-                        .HasForeignKey("ServiceProviderId")
+                        .HasForeignKey("MeterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_tariffs_service_providers_service_provider_id");
-
-                    b.HasOne("KomunalkaAPI.Models.UtilityType", "UtilityType")
-                        .WithMany("Tariffs")
-                        .HasForeignKey("UtilityTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_tariffs_utility_types_utility_type_id");
+                        .HasConstraintName("fk_tariffs_meters_meter_id");
 
                     b.Navigation("Currency");
 
-                    b.Navigation("ServiceProvider");
-
-                    b.Navigation("UtilityType");
+                    b.Navigation("Meter");
                 });
 
             modelBuilder.Entity("KomunalkaAPI.Models.UserAddress", b =>
@@ -1214,6 +1201,11 @@ namespace KomunalkaAPI.Migrations
                     b.Navigation("Tariffs");
                 });
 
+            modelBuilder.Entity("KomunalkaAPI.Models.Meter", b =>
+                {
+                    b.Navigation("Tariffs");
+                });
+
             modelBuilder.Entity("KomunalkaAPI.Models.MeterReading", b =>
                 {
                     b.Navigation("Photos");
@@ -1237,8 +1229,6 @@ namespace KomunalkaAPI.Migrations
             modelBuilder.Entity("KomunalkaAPI.Models.ServiceProvider", b =>
                 {
                     b.Navigation("Meters");
-
-                    b.Navigation("Tariffs");
                 });
 
             modelBuilder.Entity("KomunalkaAPI.Models.User", b =>
@@ -1251,8 +1241,6 @@ namespace KomunalkaAPI.Migrations
             modelBuilder.Entity("KomunalkaAPI.Models.UtilityType", b =>
                 {
                     b.Navigation("Meters");
-
-                    b.Navigation("Tariffs");
                 });
 #pragma warning restore 612, 618
         }

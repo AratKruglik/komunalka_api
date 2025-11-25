@@ -1,0 +1,30 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace KomunalkaAPI.DTO;
+
+public class CreateTariffDto
+{
+    [Required]
+    public int UtilityTypeId { get; set; }
+
+    [Required]
+    public int CurrencyId { get; set; }
+
+    [Required]
+    [StringLength(50)]
+    public required string PricingModel { get; set; }
+
+    [Required]
+    [Range(0, double.MaxValue)]
+    public decimal BaseRate { get; set; }
+
+    [Range(0, double.MaxValue)]
+    public decimal? ServiceFee { get; set; }
+
+    [Required]
+    public DateTime EffectiveFrom { get; set; }
+
+    public DateTime? EffectiveTo { get; set; }
+
+    public string? Notes { get; set; }
+}

@@ -44,4 +44,5 @@ public class ServiceProvider
 
     // Navigation properties
     public virtual ICollection<Meter> Meters { get; set; } = new List<Meter>();
+    public virtual ICollection<Tariff> Tariffs { get; set; } = new List<Tariff>();
 }
