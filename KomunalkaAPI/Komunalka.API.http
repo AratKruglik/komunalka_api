@@ -272,6 +272,171 @@ Authorization: Bearer {{jwt_token}}
 
 ###
 
+### Meter (Лічильник) Management Endpoints
+
+# Get all meters (requires authentication)
+GET {{KomunalkaAPI_HostAddress}}/meter
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# Get meter by ID (requires authentication)
+GET {{KomunalkaAPI_HostAddress}}/meter/1
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# Get meters by address ID (requires authentication)
+GET {{KomunalkaAPI_HostAddress}}/meter/address/1
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# Get active meters (requires authentication)
+GET {{KomunalkaAPI_HostAddress}}/meter/active
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# Create new meter without photo (requires authentication)
+# utilityTypeId: 1 = Електроенергія, 2 = Газ, 3 = Холодна вода, 4 = Гаряча вода, 5 = Опалення
+POST {{KomunalkaAPI_HostAddress}}/meter
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Authorization: Bearer {{jwt_token}}
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="AddressId"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="UtilityTypeId"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="Name"
+
+Лічильник електроенергії
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="SerialNumber"
+
+AB12345678
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="ModelName"
+
+НІК 2102
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="Location"
+
+На кухні біля дверей
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="InstallationDate"
+
+2024-01-15
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="InitialReading"
+
+1500.50
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="ServiceProviderId"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="Notes"
+
+Перевірено та опломбовано
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="IsActive"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+
+# Create new meter with photo (requires authentication)
+# Note: Replace "./path/to/meter-photo.jpg" with actual image path
+POST {{KomunalkaAPI_HostAddress}}/meter
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Authorization: Bearer {{jwt_token}}
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="AddressId"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="UtilityTypeId"
+
+2
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="Name"
+
+Лічильник газу
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="SerialNumber"
+
+GZ98765432
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="ModelName"
+
+Metrix G4
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="Location"
+
+У коридорі на стіні
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="InstallationDate"
+
+2024-02-20
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="InitialReading"
+
+250.0
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="ServiceProviderId"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="Notes"
+
+Встановлено та опломбовано газовою службою
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="IsActive"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="photo"; filename="meter-photo.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/meter-photo.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+
+# Update meter (requires authentication)
+PUT {{KomunalkaAPI_HostAddress}}/meter/1
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "serialNumber": "AB12345678-NEW",
+  "name": "Лічильник електроенергії (оновлено)",
+  "modelName": "НІК 2102-01",
+  "location": "На кухні біля дверей (ліва стіна)",
+  "notes": "Пройшов повірку 2024-11-25",
+  "isActive": true
+}
+
+###
+
+# Delete meter (requires authentication)
+DELETE {{KomunalkaAPI_HostAddress}}/meter/1
+Authorization: Bearer {{jwt_token}}
+
+###
+
 ### Currency Management Endpoints
 
 # Get all currencies (requires authentication)
@@ -378,6 +543,21 @@ GET http://localhost:8080/health/ready
 # Regions:
 # - 26 Ukrainian regions available (області України)
 # - Use GET /api/v1/region to get full list with IDs
+#
+# Meters (Лічильники):
+# - Full CRUD operations for utility meters
+# - Supports photo upload (multipart/form-data)
+# - Fields: AddressId, UtilityTypeId, Name, SerialNumber, ModelName, Location
+# - Additional: InstallationDate, InitialReading, ServiceProviderId, Notes, IsActive
+# - Utility Types: 1=Електроенергія, 2=Газ, 3=Холодна вода, 4=Гаряча вода, 5=Опалення
+# - Photos saved to /uploads/meters/ directory
+# - Get meters by address: GET /api/v1/meter/address/{addressId}
+# - Get only active meters: GET /api/v1/meter/active
+#
+# Service Providers (Провайдери послуг):
+# - New entity for utility service providers
+# - Linked to meters via ServiceProviderId
+# - Stores provider contact information (name, phone, email, website)
 #
 # CORS:
 # - Configured to allow origins from environment variable
