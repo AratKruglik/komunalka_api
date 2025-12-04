@@ -89,7 +89,24 @@ Authorization: Bearer {{jwt_token}}
 
 ###
 
-# Update user (requires authentication)
+# Update user without password change (requires authentication)
+PUT {{KomunalkaAPI_HostAddress}}/users/1
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "username": "updateduser",
+  "email": "updated@example.com"
+}
+
+###
+
+# Update user WITH password change (requires authentication)
+# Password requirements:
+# - Minimum 8 characters
+# - At least 1 uppercase letter
+# - At least 1 lowercase letter
+# - At least 1 digit
 PUT {{KomunalkaAPI_HostAddress}}/users/1
 Content-Type: application/json
 Authorization: Bearer {{jwt_token}}
@@ -97,7 +114,9 @@ Authorization: Bearer {{jwt_token}}
 {
   "username": "updateduser",
   "email": "updated@example.com",
-  "password": "newpassword123"
+  "currentPassword": "Password123",
+  "newPassword": "NewPassword456",
+  "confirmNewPassword": "NewPassword456"
 }
 
 ###
@@ -643,6 +662,12 @@ GET http://localhost:8080/health/ready
 # - Most endpoints require JWT authentication via Bearer token
 # - Register a user first, then login to get JWT and refresh tokens
 # - Update jwt_token and refresh_token variables after login
+#
+# User Management:
+# - Update user endpoint (PUT /users/{id}) supports optional password change
+# - To change password, provide: currentPassword, newPassword, confirmNewPassword
+# - Password requirements: min 8 chars, 1 uppercase, 1 lowercase, 1 digit
+# - Without password fields, only username and email are updated
 #
 # Docker URLs:
 # - API: http://localhost:8080

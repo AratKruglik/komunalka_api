@@ -99,20 +99,37 @@ public class UsersService(IUnitOfWork unitOfWork) : IUserService
         };
     }
 
-    public async Task<ServiceResult<UserDto>> UpdateAsync(int id, UserDto dto)
+    public async Task<ServiceResult<UserDto>> UpdateAsync(int id, UpdateUserRequest request)
     {
         var user = await unitOfWork.Users.GetByIdAsync(id);
         if (user == null)
         {
-            return ServiceResult<UserDto>.NotFoundResult("Користувача не знайдено");
+            return ServiceResult<UserDto>.NotFoundResult("User not found");
         }
 
-        user.Username = dto.Username;
-        if (!string.IsNullOrEmpty(dto.Password))
+        // Update basic user info
+        user.Username = request.Username;
+        user.Email = request.Email;
+
+        // Handle password change if requested
+        if (!string.IsNullOrEmpty(request.NewPassword))
         {
-            user.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+            // Validate that CurrentPassword is provided
+            if (string.IsNullOrEmpty(request.CurrentPassword))
+            {
+                return ServiceResult<UserDto>.Fail("Current password is required to change password");
+            }
+
+            // Verify current password
+            if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.Password))
+            {
+                return ServiceResult<UserDto>.Fail("Current password is incorrect");
+            }
+
+            // Hash and update new password
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         }
-        user.Email = dto.Email;
+
         user.UpdatedAt = DateTime.UtcNow;
 
         unitOfWork.Users.Update(user);

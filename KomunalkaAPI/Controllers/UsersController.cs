@@ -50,14 +50,14 @@ public class UsersController(IUserService userService) : ControllerBase
     }
 
     [HttpPut("{id:int}", Name = "updateUser")]
-    public async Task<ActionResult<UserDto>> Update(int id, UserDto userDto)
+    public async Task<ActionResult<UserDto>> Update(int id, UpdateUserRequest request)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
 
-        var result = await userService.UpdateAsync(id, userDto);
+        var result = await userService.UpdateAsync(id, request);
 
         if (!result.Success)
         {
