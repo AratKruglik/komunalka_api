@@ -50,7 +50,8 @@ public class UsersController(IUserService userService) : ControllerBase
     }
 
     [HttpPut("{id:int}", Name = "updateUser")]
-    public async Task<ActionResult<UserDto>> Update(int id, UpdateUserRequest request)
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<UserDto>> Update(int id, [FromForm] UpdateUserRequest request)
     {
         if (!ModelState.IsValid)
         {
@@ -67,6 +68,48 @@ public class UsersController(IUserService userService) : ControllerBase
         }
 
         return Ok(result.Data);
+    }
+
+    [HttpGet("{id:int}/avatar", Name = "userAvatar")]
+    public async Task<IActionResult> GetAvatar(int id)
+    {
+        var result = await userService.GetAvatarAsync(id, false);
+
+        if (!result.Success)
+        {
+            if (result.NotFound)
+                return NotFound(result.Errors?.FirstOrDefault());
+            return BadRequest(result.Errors);
+        }
+
+        var avatar = result.Data;
+        if (avatar == null)
+        {
+            return NotFound();
+        }
+
+        return File(avatar.FileStream, avatar.MimeType);
+    }
+
+    [HttpGet("{id:int}/avatar/thumbnail", Name = "userAvatarThumbnail")]
+    public async Task<IActionResult> GetAvatarThumbnail(int id)
+    {
+        var result = await userService.GetAvatarAsync(id, true);
+
+        if (!result.Success)
+        {
+            if (result.NotFound)
+                return NotFound(result.Errors?.FirstOrDefault());
+            return BadRequest(result.Errors);
+        }
+
+        var avatar = result.Data;
+        if (avatar == null)
+        {
+            return NotFound();
+        }
+
+        return File(avatar.FileStream, avatar.MimeType);
     }
 
     [HttpDelete("{id:int}", Name = "deleteUser")]

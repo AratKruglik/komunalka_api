@@ -17,6 +17,9 @@ Content-Type: application/json
 
 {
   "username": "testuser",
+  "firstName": "Олена",
+  "lastName": "Петренко",
+  "phoneNumber": "+380501234567",
   "email": "test@example.com",
   "password": "Password123",
   "confirmPassword": "Password123"
@@ -96,6 +99,9 @@ Authorization: Bearer {{jwt_token}}
 
 {
   "username": "updateduser",
+  "firstName": "Олена",
+  "lastName": "Іваненко",
+  "phoneNumber": "+380501234567",
   "email": "updated@example.com"
 }
 
@@ -113,11 +119,62 @@ Authorization: Bearer {{jwt_token}}
 
 {
   "username": "updateduser",
+  "firstName": "Олена",
+  "lastName": "Петренко",
+  "phoneNumber": "+380501234567",
   "email": "updated@example.com",
   "currentPassword": "Password123",
   "newPassword": "NewPassword456",
   "confirmNewPassword": "NewPassword456"
 }
+
+###
+
+# Update user WITH avatar upload (requires authentication)
+# Allowed image types: JPG, JPEG, PNG, GIF, HEIC; max size 2 MB
+# Replace ./path/to/avatar.jpg with an existing small test image on your machine
+PUT {{KomunalkaAPI_HostAddress}}/users/1
+Authorization: Bearer {{jwt_token}}
+Content-Type: multipart/form-data; boundary=AvatarBoundary
+
+--AvatarBoundary
+Content-Disposition: form-data; name="username"
+
+updateduser
+--AvatarBoundary
+Content-Disposition: form-data; name="firstName"
+
+Олена
+--AvatarBoundary
+Content-Disposition: form-data; name="lastName"
+
+Петренко
+--AvatarBoundary
+Content-Disposition: form-data; name="phoneNumber"
+
++380501234567
+--AvatarBoundary
+Content-Disposition: form-data; name="email"
+
+updated@example.com
+--AvatarBoundary
+Content-Disposition: form-data; name="avatar"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+< ./path/to/avatar.jpg
+--AvatarBoundary--
+
+###
+
+# Get user avatar (optimized)
+GET {{KomunalkaAPI_HostAddress}}/users/1/avatar
+Authorization: Bearer {{jwt_token}}
+
+###
+
+# Get user avatar (thumbnail)
+GET {{KomunalkaAPI_HostAddress}}/users/1/avatar/thumbnail
+Authorization: Bearer {{jwt_token}}
 
 ###
 

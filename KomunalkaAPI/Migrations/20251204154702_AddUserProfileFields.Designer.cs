@@ -3,6 +3,7 @@ using System;
 using KomunalkaAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KomunalkaAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251204154702_AddUserProfileFields")]
+    partial class AddUserProfileFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -881,33 +884,6 @@ namespace KomunalkaAPI.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("role");
-
-                    b.Property<int?>("AvatarHeight")
-                        .HasColumnType("integer")
-                        .HasColumnName("avatar_height");
-
-                    b.Property<string>("AvatarMimeType")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("avatar_mime_type");
-
-                    b.Property<string>("AvatarOptimizedPath")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("avatar_optimized_path");
-
-                    b.Property<long?>("AvatarSizeInBytes")
-                        .HasColumnType("bigint")
-                        .HasColumnName("avatar_size_in_bytes");
-
-                    b.Property<string>("AvatarThumbnailPath")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("avatar_thumbnail_path");
-
-                    b.Property<int?>("AvatarWidth")
-                        .HasColumnType("integer")
-                        .HasColumnName("avatar_width");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")

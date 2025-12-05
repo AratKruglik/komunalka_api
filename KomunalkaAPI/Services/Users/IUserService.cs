@@ -10,4 +10,5 @@ public interface IUserService
     Task<UserDto> CreateAsync(UserDto dto);
     Task<ServiceResult<UserDto>> UpdateAsync(int id, UpdateUserRequest request);
     Task<ServiceResult<bool>> DeleteAsync(int id);
+    Task<ServiceResult<UserAvatarFile>> GetAvatarAsync(int id, bool thumbnail);
 }

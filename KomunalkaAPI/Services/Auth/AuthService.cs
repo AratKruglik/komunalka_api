@@ -48,6 +48,9 @@ public class AuthService(
         var newUser = new User
         {
             Username = request.Username,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            PhoneNumber = request.PhoneNumber,
             Email = request.Email,
             Password = HashPassword(request.Password),
             Role = "User"

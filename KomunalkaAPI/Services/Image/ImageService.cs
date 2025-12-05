@@ -13,6 +13,8 @@ public class ImageService : IImageService
     private readonly ILogger<ImageService> _logger;
     private readonly int _optimizedWidth;
     private readonly int _thumbnailWidth;
+    private readonly int _avatarOptimizedWidth;
+    private readonly int _avatarThumbnailWidth;
     private readonly int _jpegQuality;
 
     public ImageService(
@@ -27,10 +29,38 @@ public class ImageService : IImageService
         _optimizedWidth = _configuration.GetValue<int>("ImageSettings:OptimizedImageWidth", 800);
         _thumbnailWidth = _configuration.GetValue<int>("ImageSettings:ThumbnailWidth", 200);
         _jpegQuality = _configuration.GetValue<int>("ImageSettings:JpegQuality", 85);
+        _avatarOptimizedWidth = _configuration.GetValue<int>("AvatarImageSettings:OptimizedImageWidth", _optimizedWidth);
+        _avatarThumbnailWidth = _configuration.GetValue<int>("AvatarImageSettings:ThumbnailWidth", _thumbnailWidth);
     }
 
     public async Task<(string optimizedPath, string thumbnailPath, long optimizedSize, long thumbnailSize, int width, int height)>
         ProcessImageAsync(Stream imageStream, string fileName, int readingId)
+    {
+        var subfolder = $"{DateTime.UtcNow.Year}/{DateTime.UtcNow.Month:D2}/{readingId}";
+        return await ProcessImageInternalAsync(
+            imageStream,
+            fileName,
+            subfolder,
+            _optimizedWidth,
+            _thumbnailWidth,
+            StorageScope.MeterReading);
+    }
+
+    public async Task<(string optimizedPath, string thumbnailPath, long optimizedSize, long thumbnailSize, int width, int height)>
+        ProcessAvatarImageAsync(Stream imageStream, string fileName, int userId)
+    {
+        var subfolder = $"avatars/{userId}/{DateTime.UtcNow:yyyy/MM}";
+        return await ProcessImageInternalAsync(
+            imageStream,
+            fileName,
+            subfolder,
+            _avatarOptimizedWidth,
+            _avatarThumbnailWidth,
+            StorageScope.Avatar);
+    }
+
+    private async Task<(string optimizedPath, string thumbnailPath, long optimizedSize, long thumbnailSize, int width, int height)>
+        ProcessImageInternalAsync(Stream imageStream, string fileName, string subfolder, int optimizedWidth, int thumbnailWidth, StorageScope scope)
     {
         try
         {
@@ -39,7 +69,7 @@ public class ImageService : IImageService
             // Check if it's HEIC/HEIF - convert to JPEG first using ImageMagick
             if (extension == ".heic" || extension == ".heif")
             {
-                return await ProcessHeicImageAsync(imageStream, fileName, readingId);
+                return await ProcessHeicImageAsync(imageStream, fileName, subfolder, optimizedWidth, thumbnailWidth, scope);
             }
 
             // Process regular images with ImageSharp
@@ -57,17 +87,16 @@ public class ImageService : IImageService
             // Generate unique file names
             var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
             var baseFileName = Path.GetFileNameWithoutExtension(fileName);
-            var subfolder = $"{DateTime.UtcNow.Year}/{DateTime.UtcNow.Month:D2}/{readingId}";
 
             // Process optimized image
             var optimizedFileName = $"{baseFileName}_{timestamp}_optimized.jpg";
             var (optimizedPath, optimizedSize) = await SaveResizedImageAsync(
-                image, subfolder, optimizedFileName, _optimizedWidth);
+                image, subfolder, optimizedFileName, optimizedWidth, scope);
 
             // Process thumbnail
             var thumbnailFileName = $"{baseFileName}_{timestamp}_thumbnail.jpg";
             var (thumbnailPath, thumbnailSize) = await SaveResizedImageAsync(
-                image, subfolder, thumbnailFileName, _thumbnailWidth);
+                image, subfolder, thumbnailFileName, thumbnailWidth, scope);
 
             return (optimizedPath, thumbnailPath, optimizedSize, thumbnailSize, originalWidth, originalHeight);
         }
@@ -79,7 +108,7 @@ public class ImageService : IImageService
     }
 
     private async Task<(string optimizedPath, string thumbnailPath, long optimizedSize, long thumbnailSize, int width, int height)>
-        ProcessHeicImageAsync(Stream heicStream, string fileName, int readingId)
+        ProcessHeicImageAsync(Stream heicStream, string fileName, string subfolder, int optimizedWidth, int thumbnailWidth, StorageScope scope)
     {
         try
         {
@@ -102,17 +131,16 @@ public class ImageService : IImageService
             // Generate unique file names
             var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
             var baseFileName = Path.GetFileNameWithoutExtension(fileName);
-            var subfolder = $"{DateTime.UtcNow.Year}/{DateTime.UtcNow.Month:D2}/{readingId}";
 
             // Process optimized image
             var optimizedFileName = $"{baseFileName}_{timestamp}_optimized.jpg";
             var (optimizedPath, optimizedSize) = await SaveResizedHeicImageAsync(
-                magickImage, subfolder, optimizedFileName, _optimizedWidth);
+                magickImage, subfolder, optimizedFileName, optimizedWidth, scope);
 
             // Process thumbnail
             var thumbnailFileName = $"{baseFileName}_{timestamp}_thumbnail.jpg";
             var (thumbnailPath, thumbnailSize) = await SaveResizedHeicImageAsync(
-                magickImage, subfolder, thumbnailFileName, _thumbnailWidth);
+                magickImage, subfolder, thumbnailFileName, thumbnailWidth, scope);
 
             return (optimizedPath, thumbnailPath, optimizedSize, thumbnailSize, originalWidth, originalHeight);
         }
@@ -124,7 +152,7 @@ public class ImageService : IImageService
     }
 
     private async Task<(string path, long size)> SaveResizedHeicImageAsync(
-        MagickImage sourceImage, string subfolder, string fileName, int maxWidth)
+        MagickImage sourceImage, string subfolder, string fileName, int maxWidth, StorageScope scope)
     {
         using var resizedImage = sourceImage.Clone();
 
@@ -143,14 +171,14 @@ public class ImageService : IImageService
         await resizedImage.WriteAsync(ms);
 
         ms.Position = 0;
-        var path = await _fileStorage.SaveFileAsync(ms, fileName, subfolder);
+        var path = await _fileStorage.SaveFileAsync(ms, fileName, subfolder, scope);
         var size = ms.Length;
 
         return (path, size);
     }
 
     private async Task<(string path, long size)> SaveResizedImageAsync(
-        SixLabors.ImageSharp.Image image, string subfolder, string fileName, int maxWidth)
+        SixLabors.ImageSharp.Image image, string subfolder, string fileName, int maxWidth, StorageScope scope)
     {
         using var resizedImage = image.Clone(ctx =>
         {
@@ -167,7 +195,7 @@ public class ImageService : IImageService
         await resizedImage.SaveAsync(ms, encoder);
 
         ms.Position = 0;
-        var path = await _fileStorage.SaveFileAsync(ms, fileName, subfolder);
+        var path = await _fileStorage.SaveFileAsync(ms, fileName, subfolder, scope);
         var size = ms.Length;
 
         return (path, size);
@@ -194,6 +222,7 @@ public class ImageService : IImageService
         return extension.ToLowerInvariant() switch
         {
             ".jpg" or ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
             ".png" => "image/png",
             ".webp" => "image/webp",
             ".heic" => "image/heic",
