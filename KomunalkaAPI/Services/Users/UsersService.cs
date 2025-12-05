@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using KomunalkaAPI.DTO;
 using KomunalkaAPI.Models;
 using KomunalkaAPI.Repositories;
@@ -16,38 +17,7 @@ public class UsersService(IUnitOfWork unitOfWork, IImageService imageService, IF
     public async Task<IReadOnlyList<UserDto>> GetAllAsync()
     {
         var users = await _unitOfWork.Users.GetAllAsync();
-        var userList = users.ToList();
-        var dtos = userList.Select(user => new UserDto
-        {
-            Id = user.Id,
-            Username = user.Username,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            PhoneNumber = user.PhoneNumber,
-            Email = user.Email,
-            AvatarUrl = BuildAvatarUrl(user.Id, user.AvatarOptimizedPath),
-            AvatarThumbnailUrl = BuildAvatarThumbnailUrl(user.Id, user.AvatarThumbnailPath),
-            Addresses = user.UserAddresses?.Select(ua => new AddressDto
-            {
-                Id = ua.Address.Id,
-                UserId = ua.UserId,
-                RegionId = ua.Address.RegionId,
-                ZipCode = ua.Address.ZipCode,
-                City = ua.Address.City,
-                Street = ua.Address.Street,
-                BuildingNumber = ua.Address.BuildingNumber,
-                ApartmentNumber = ua.Address.ApartmentNumber,
-                Notes = ua.Address.Notes,
-                IsPrimary = ua.IsPrimary,
-                AddressTypeId = ua.Address.AddressTypeId,
-                CreatedAt = ua.Address.CreatedAt,
-                UpdatedAt = ua.Address.UpdatedAt,
-                DeletedAt = ua.Address.DeletedAt
-            }).ToList(),
-            CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt,
-        }).ToList();
-        return dtos;
+        return users.Select(user => MapUserToDto(user)).ToList();
     }
 
     public async Task<ServiceResult<UserDto>> GetByIdAsync(int id)
@@ -58,37 +28,7 @@ public class UsersService(IUnitOfWork unitOfWork, IImageService imageService, IF
             return ServiceResult<UserDto>.NotFoundResult("Користувача не знайдено");
         }
 
-        var dto = new UserDto
-        {
-            Id = user.Id,
-            Username = user.Username,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            PhoneNumber = user.PhoneNumber,
-            Email = user.Email,
-            AvatarUrl = BuildAvatarUrl(user.Id, user.AvatarOptimizedPath),
-            AvatarThumbnailUrl = BuildAvatarThumbnailUrl(user.Id, user.AvatarThumbnailPath),
-            Addresses = user.UserAddresses?.Select(ua => new AddressDto
-            {
-                Id = ua.Address.Id,
-                UserId = ua.UserId,
-                RegionId = ua.Address.RegionId,
-                ZipCode = ua.Address.ZipCode,
-                City = ua.Address.City,
-                Street = ua.Address.Street,
-                BuildingNumber = ua.Address.BuildingNumber,
-                ApartmentNumber = ua.Address.ApartmentNumber,
-                Notes = ua.Address.Notes,
-                IsPrimary = ua.IsPrimary,
-                AddressTypeId = ua.Address.AddressTypeId,
-                CreatedAt = ua.Address.CreatedAt,
-                UpdatedAt = ua.Address.UpdatedAt,
-                DeletedAt = ua.Address.DeletedAt
-            }).ToList(),
-            CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt,
-        };
-        return ServiceResult<UserDto>.Ok(dto);
+        return ServiceResult<UserDto>.Ok(MapUserToDto(user));
     }
 
     public async Task<UserDto> CreateAsync(UserDto dto)
@@ -104,20 +44,7 @@ public class UsersService(IUnitOfWork unitOfWork, IImageService imageService, IF
         var entityEntry = await _unitOfWork.Users.AddAsync(user);
         await _unitOfWork.CompleteAsync();
 
-        var createdUser = entityEntry.Entity;
-        return new UserDto
-        {
-            Id = createdUser.Id,
-            Username = createdUser.Username,
-            FirstName = createdUser.FirstName,
-            LastName = createdUser.LastName,
-            PhoneNumber = createdUser.PhoneNumber,
-            Email = createdUser.Email,
-            AvatarUrl = BuildAvatarUrl(createdUser.Id, createdUser.AvatarOptimizedPath),
-            AvatarThumbnailUrl = BuildAvatarThumbnailUrl(createdUser.Id, createdUser.AvatarThumbnailPath),
-            CreatedAt = createdUser.CreatedAt,
-            UpdatedAt = createdUser.UpdatedAt,
-        };
+        return MapUserToDto(entityEntry.Entity);
     }
 
     public async Task<ServiceResult<UserDto>> UpdateAsync(int id, UpdateUserRequest request)
@@ -187,20 +114,7 @@ public class UsersService(IUnitOfWork unitOfWork, IImageService imageService, IF
         _unitOfWork.Users.Update(user);
         await _unitOfWork.CompleteAsync();
 
-        var updatedDto = new UserDto
-        {
-            Id = user.Id,
-            Username = user.Username,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            PhoneNumber = user.PhoneNumber,
-            Email = user.Email,
-            AvatarUrl = BuildAvatarUrl(user.Id, user.AvatarOptimizedPath),
-            AvatarThumbnailUrl = BuildAvatarThumbnailUrl(user.Id, user.AvatarThumbnailPath),
-            CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt,
-        };
-        return ServiceResult<UserDto>.Ok(updatedDto);
+        return ServiceResult<UserDto>.Ok(MapUserToDto(user));
     }
 
     public async Task<ServiceResult<bool>> DeleteAsync(int id)
@@ -210,6 +124,17 @@ public class UsersService(IUnitOfWork unitOfWork, IImageService imageService, IF
         {
             return ServiceResult<bool>.NotFoundResult("Користувача не знайдено");
         }
+
+        if (!string.IsNullOrEmpty(user.AvatarOptimizedPath))
+        {
+            await _fileStorage.DeleteFileAsync(user.AvatarOptimizedPath, StorageScope.Avatar);
+        }
+
+        if (!string.IsNullOrEmpty(user.AvatarThumbnailPath))
+        {
+            await _fileStorage.DeleteFileAsync(user.AvatarThumbnailPath, StorageScope.Avatar);
+        }
+
         _unitOfWork.Users.Delete(user);
         await _unitOfWork.CompleteAsync();
         return ServiceResult<bool>.Ok(true);
@@ -239,6 +164,42 @@ public class UsersService(IUnitOfWork unitOfWork, IImageService imageService, IF
                        ?? _imageService.GetImageMimeType(Path.GetExtension(path));
 
         return ServiceResult<UserAvatarFile>.Ok(new UserAvatarFile(fileStream, mimeType));
+    }
+
+    private static UserDto MapUserToDto(User user, bool includeAddresses = true)
+    {
+        return new UserDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            PhoneNumber = user.PhoneNumber,
+            Email = user.Email,
+            AvatarUrl = BuildAvatarUrl(user.Id, user.AvatarOptimizedPath),
+            AvatarThumbnailUrl = BuildAvatarThumbnailUrl(user.Id, user.AvatarThumbnailPath),
+            Addresses = includeAddresses
+                ? user.UserAddresses?.Select(ua => new AddressDto
+                {
+                    Id = ua.Address.Id,
+                    UserId = ua.UserId,
+                    RegionId = ua.Address.RegionId,
+                    ZipCode = ua.Address.ZipCode,
+                    City = ua.Address.City,
+                    Street = ua.Address.Street,
+                    BuildingNumber = ua.Address.BuildingNumber,
+                    ApartmentNumber = ua.Address.ApartmentNumber,
+                    Notes = ua.Address.Notes,
+                    IsPrimary = ua.IsPrimary,
+                    AddressTypeId = ua.Address.AddressTypeId,
+                    CreatedAt = ua.Address.CreatedAt,
+                    UpdatedAt = ua.Address.UpdatedAt,
+                    DeletedAt = ua.Address.DeletedAt
+                }).ToList() ?? new List<AddressDto>()
+                : null,
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt,
+        };
     }
 
     private static string? BuildAvatarUrl(int userId, string? path)

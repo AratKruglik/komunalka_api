@@ -25,6 +25,21 @@ Content-Type: application/json
   "confirmPassword": "Password123"
 }
 
+# Expected 201 Created (sample)
+# {
+#   "id": 1,
+#   "username": "testuser",
+#   "firstName": "Олена",
+#   "lastName": "Петренко",
+#   "phoneNumber": "+380501234567",
+#   "email": "test@example.com",
+#   "avatarUrl": null,
+#   "avatarThumbnailUrl": null,
+#   "addresses": [],
+#   "createdAt": "2025-12-10T10:00:00Z",
+#   "updatedAt": "2025-12-10T10:00:00Z"
+# }
+
 ###
 
 # Login user
@@ -36,6 +51,19 @@ Content-Type: application/json
   "password": "Password123"
 }
 
+# Expected 200 OK (sample)
+# {
+#   "token": "{{jwt_token}}",
+#   "refreshToken": "{{refresh_token}}",
+#   "expiresIn": 3600,
+#   "tokenType": "Bearer",
+#   "user": {
+#     "id": 1,
+#     "username": "testuser",
+#     "email": "test@example.com"
+#   }
+# }
+
 ###
 
 # Refresh JWT Token
@@ -45,6 +73,14 @@ Content-Type: application/json
 {
   "refreshToken": "{{refresh_token}}"
 }
+
+# Expected 200 OK (sample)
+# {
+#   "token": "{{jwt_token}}",
+#   "refreshToken": "{{refresh_token}}",
+#   "expiresIn": 3600,
+#   "tokenType": "Bearer"
+# }
 
 ###
 
@@ -63,6 +99,13 @@ Authorization: Bearer {{jwt_token}}
 GET {{KomunalkaAPI_HostAddress}}/auth/validate-token
 Authorization: Bearer {{jwt_token}}
 
+# Expected 200 OK (sample)
+# {
+#   "isValid": true,
+#   "expiresAt": "2025-12-10T11:00:00Z",
+#   "claims": ["sub", "email", "role"]
+# }
+
 ### User Management Endpoints
 
 # Get all users (requires authentication)
@@ -70,12 +113,44 @@ GET {{KomunalkaAPI_HostAddress}}/users
 Accept: application/json
 Authorization: Bearer {{jwt_token}}
 
+# Expected 200 OK (sample)
+# [
+#   {
+#     "id": 1,
+#     "username": "testuser",
+#     "firstName": "Олена",
+#     "lastName": "Петренко",
+#     "phoneNumber": "+380501234567",
+#     "email": "test@example.com",
+#     "avatarUrl": "http://localhost:8080/api/v1/users/1/avatar",
+#     "avatarThumbnailUrl": "http://localhost:8080/api/v1/users/1/avatar/thumbnail",
+#     "addresses": [],
+#     "createdAt": "2025-12-10T10:00:00Z",
+#     "updatedAt": "2025-12-10T10:00:00Z"
+#   }
+# ]
+
 ###
 
 # Get user by ID (requires authentication)
 GET {{KomunalkaAPI_HostAddress}}/users/1
 Accept: application/json
 Authorization: Bearer {{jwt_token}}
+
+# Expected 200 OK (sample)
+# {
+#   "id": 1,
+#   "username": "testuser",
+#   "firstName": "Олена",
+#   "lastName": "Петренко",
+#   "phoneNumber": "+380501234567",
+#   "email": "test@example.com",
+#   "avatarUrl": "http://localhost:8080/api/v1/users/1/avatar",
+#   "avatarThumbnailUrl": "http://localhost:8080/api/v1/users/1/avatar/thumbnail",
+#   "addresses": [],
+#   "createdAt": "2025-12-10T10:00:00Z",
+#   "updatedAt": "2025-12-10T10:00:00Z"
+# }
 
 ###
 
@@ -89,6 +164,18 @@ Authorization: Bearer {{jwt_token}}
   "email": "newuser@example.com",
   "password": "password123"
 }
+
+# Expected 201 Created (sample)
+# {
+#   "id": 2,
+#   "username": "newuser",
+#   "email": "newuser@example.com",
+#   "avatarUrl": null,
+#   "avatarThumbnailUrl": null,
+#   "addresses": [],
+#   "createdAt": "2025-12-10T10:05:00Z",
+#   "updatedAt": "2025-12-10T10:05:00Z"
+# }
 
 ###
 
@@ -104,6 +191,21 @@ Authorization: Bearer {{jwt_token}}
   "phoneNumber": "+380501234567",
   "email": "updated@example.com"
 }
+
+# Expected 200 OK (sample)
+# {
+#   "id": 1,
+#   "username": "updateduser",
+#   "firstName": "Олена",
+#   "lastName": "Іваненко",
+#   "phoneNumber": "+380501234567",
+#   "email": "updated@example.com",
+#   "avatarUrl": "http://localhost:8080/api/v1/users/1/avatar",
+#   "avatarThumbnailUrl": "http://localhost:8080/api/v1/users/1/avatar/thumbnail",
+#   "addresses": [],
+#   "createdAt": "2025-12-10T10:00:00Z",
+#   "updatedAt": "2025-12-10T10:15:00Z"
+# }
 
 ###
 
@@ -127,6 +229,20 @@ Authorization: Bearer {{jwt_token}}
   "newPassword": "NewPassword456",
   "confirmNewPassword": "NewPassword456"
 }
+
+# Expected 200 OK (sample: same shape as user)
+# {
+#   "id": 1,
+#   "username": "updateduser",
+#   "firstName": "Олена",
+#   "lastName": "Петренко",
+#   "phoneNumber": "+380501234567",
+#   "email": "updated@example.com",
+#   "avatarUrl": "http://localhost:8080/api/v1/users/1/avatar",
+#   "avatarThumbnailUrl": "http://localhost:8080/api/v1/users/1/avatar/thumbnail",
+#   "createdAt": "2025-12-10T10:00:00Z",
+#   "updatedAt": "2025-12-10T10:20:00Z"
+# }
 
 ###
 
@@ -164,17 +280,35 @@ Content-Type: image/jpeg
 < ./path/to/avatar.jpg
 --AvatarBoundary--
 
+# Expected 200 OK (sample)
+# {
+#   "id": 1,
+#   "username": "updateduser",
+#   "firstName": "Олена",
+#   "lastName": "Петренко",
+#   "phoneNumber": "+380501234567",
+#   "email": "updated@example.com",
+#   "avatarUrl": "http://localhost:8080/api/v1/users/1/avatar",
+#   "avatarThumbnailUrl": "http://localhost:8080/api/v1/users/1/avatar/thumbnail",
+#   "createdAt": "2025-12-10T10:00:00Z",
+#   "updatedAt": "2025-12-10T10:25:00Z"
+# }
+
 ###
 
 # Get user avatar (optimized)
 GET {{KomunalkaAPI_HostAddress}}/users/1/avatar
 Authorization: Bearer {{jwt_token}}
 
+# Expected 200 OK: binary JPEG stream (optimized, oriented/stripped EXIF)
+
 ###
 
 # Get user avatar (thumbnail)
 GET {{KomunalkaAPI_HostAddress}}/users/1/avatar/thumbnail
 Authorization: Bearer {{jwt_token}}
+
+# Expected 200 OK: binary JPEG thumbnail stream
 
 ###
 

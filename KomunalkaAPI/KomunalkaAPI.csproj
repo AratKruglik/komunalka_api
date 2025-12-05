@@ -40,4 +40,10 @@
       </Content>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Komunalka API\Addresses\" />
+      <Folder Include="Komunalka API\Meters\" />
+      <Folder Include="logs\" />
+    </ItemGroup>
+
 </Project>
