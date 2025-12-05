@@ -1,16 +1,17 @@
-# Komunalka API HTTP Client
-# Base URLs for different environments
+### Komunalka API HTTP Client
+# Base URLs for different environments (uncomment the one you need)
 @KomunalkaAPI_HostAddress = http://localhost:8080/api/v1
 # @KomunalkaAPI_HostAddress = http://localhost:5242/api/v1
 # @KomunalkaAPI_HostAddress = https://localhost:7095/api/v1
 
 # JWT Token variables (update these after successful login)
 # Example tokens from test user:
-@jwt_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwianRpIjoiNTE4ZTI0MTQtM2Y4OS00YzZkLWI1MzQtNDJhMzg1NDMzODY4IiwidW5pcXVlX25hbWUiOiJ0ZXN0dXNlciIsInJvbGUiOiJVc2VyIiwibmJmIjoxNzYxNzMzMTU3LCJleHAiOjE3NjE3MzQ5NTcsImlhdCI6MTc2MTczMzE1NywiaXNzIjoia29tdW5hbGthLWFwaSIsImF1ZCI6ImtvbXVuYWxrYS1jbGllbnQifQ.c_XtBhH8n_UvF4DWWMOo7TpoirJeVovOMTfpzPWBTMU
+@jwt_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwianRpIjoiNDA2NjM3NTUtOTA2OS00OGZjLWE4ZDUtMWQzYWI3NjdkNzhmIiwidW5pcXVlX25hbWUiOiJ0ZXN0dXNlciIsInJvbGUiOiJVc2VyIiwibmJmIjoxNzY0OTMyODc2LCJleHAiOjE3NjQ5MzQ2NzYsImlhdCI6MTc2NDkzMjg3NiwiaXNzIjoia29tdW5hbGthLWFwaSIsImF1ZCI6ImtvbXVuYWxrYS1jbGllbnQifQ.1pGnQzsQycW21X4wczQqYX8yU-7rujI91Y9pfXW3gv4
 @refresh_token = c0YCDucdInwaIXd9V4fHnztbrgblXUFGAfOR4Qi5ssI=
 
 ### Authentication Endpoints
 
+###
 # Register new user
 POST {{KomunalkaAPI_HostAddress}}/auth/register
 Content-Type: application/json
@@ -25,23 +26,7 @@ Content-Type: application/json
   "confirmPassword": "Password123"
 }
 
-# Expected 201 Created (sample)
-# {
-#   "id": 1,
-#   "username": "testuser",
-#   "firstName": "Олена",
-#   "lastName": "Петренко",
-#   "phoneNumber": "+380501234567",
-#   "email": "test@example.com",
-#   "avatarUrl": null,
-#   "avatarThumbnailUrl": null,
-#   "addresses": [],
-#   "createdAt": "2025-12-10T10:00:00Z",
-#   "updatedAt": "2025-12-10T10:00:00Z"
-# }
-
 ###
-
 # Login user
 POST {{KomunalkaAPI_HostAddress}}/auth/login
 Content-Type: application/json
@@ -51,21 +36,7 @@ Content-Type: application/json
   "password": "Password123"
 }
 
-# Expected 200 OK (sample)
-# {
-#   "token": "{{jwt_token}}",
-#   "refreshToken": "{{refresh_token}}",
-#   "expiresIn": 3600,
-#   "tokenType": "Bearer",
-#   "user": {
-#     "id": 1,
-#     "username": "testuser",
-#     "email": "test@example.com"
-#   }
-# }
-
 ###
-
 # Refresh JWT Token
 POST {{KomunalkaAPI_HostAddress}}/auth/refresh-token
 Content-Type: application/json
@@ -74,16 +45,7 @@ Content-Type: application/json
   "refreshToken": "{{refresh_token}}"
 }
 
-# Expected 200 OK (sample)
-# {
-#   "token": "{{jwt_token}}",
-#   "refreshToken": "{{refresh_token}}",
-#   "expiresIn": 3600,
-#   "tokenType": "Bearer"
-# }
-
 ###
-
 # Revoke refresh token (requires authentication)
 POST {{KomunalkaAPI_HostAddress}}/auth/revoke-token
 Content-Type: application/json
@@ -94,7 +56,6 @@ Authorization: Bearer {{jwt_token}}
 }
 
 ###
-
 # Validate JWT token
 GET {{KomunalkaAPI_HostAddress}}/auth/validate-token
 Authorization: Bearer {{jwt_token}}
@@ -108,6 +69,7 @@ Authorization: Bearer {{jwt_token}}
 
 ### User Management Endpoints
 
+###
 # Get all users (requires authentication)
 GET {{KomunalkaAPI_HostAddress}}/users
 Accept: application/json
@@ -132,6 +94,7 @@ Authorization: Bearer {{jwt_token}}
 
 ###
 
+###
 # Get user by ID (requires authentication)
 GET {{KomunalkaAPI_HostAddress}}/users/1
 Accept: application/json
@@ -154,6 +117,7 @@ Authorization: Bearer {{jwt_token}}
 
 ###
 
+###
 # Create new user (requires authentication)
 POST {{KomunalkaAPI_HostAddress}}/users
 Content-Type: application/json
@@ -179,6 +143,7 @@ Authorization: Bearer {{jwt_token}}
 
 ###
 
+###
 # Update user without password change (requires authentication)
 PUT {{KomunalkaAPI_HostAddress}}/users/1
 Content-Type: application/json
