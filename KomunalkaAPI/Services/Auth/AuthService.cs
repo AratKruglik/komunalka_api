@@ -20,7 +20,20 @@ public class AuthService(
 
         var user = await unitOfWork.Users.GetByEmailAsync(request.Email);
 
-        if (user == null || !VerifyPassword(request.Password, user.Password))
+        if (user == null)
+        {
+            logger.LogWarning("Failed authentication attempt for email: {Email}", request.Email);
+            return null;
+        }
+
+        // OAuth users cannot login with password
+        if (user.Password == null)
+        {
+            logger.LogWarning("OAuth user attempted password login: {Email}", request.Email);
+            return null;
+        }
+
+        if (!VerifyPassword(request.Password, user.Password))
         {
             logger.LogWarning("Failed authentication attempt for email: {Email}", request.Email);
             return null;
@@ -53,7 +66,9 @@ public class AuthService(
             PhoneNumber = request.PhoneNumber,
             Email = request.Email,
             Password = HashPassword(request.Password),
-            Role = "User"
+            Role = "User",
+            AuthProvider = "Local",
+            EmailVerified = false
         };
 
         await unitOfWork.Users.AddAsync(newUser);
@@ -150,7 +165,9 @@ public class AuthService(
             Role = user.Role,
             Token = token,
             RefreshToken = refreshToken.Token,
-            Expiration = jwtService.GetTokenExpirationTime(token)
+            Expiration = jwtService.GetTokenExpirationTime(token),
+            AuthProvider = user.AuthProvider,
+            EmailVerified = user.EmailVerified
         };
     }
 
