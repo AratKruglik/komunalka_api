@@ -5,9 +5,6 @@ using KomunalkaAPI.Repositories;
 
 namespace KomunalkaAPI.Services.Auth;
 
-/// <summary>
-/// User authentication service
-/// </summary>
 public class AuthService(
     IUnitOfWork unitOfWork,
     IJwtService jwtService,
@@ -26,7 +23,6 @@ public class AuthService(
             return null;
         }
 
-        // OAuth users cannot login with password
         if (user.Password == null)
         {
             logger.LogWarning("OAuth user attempted password login: {Email}", request.Email);
@@ -49,7 +45,6 @@ public class AuthService(
     {
         logger.LogInformation("Registration attempt for new user: {Email}", request.Email);
 
-        // Check if user with this email already exists
         var existingUser = await unitOfWork.Users.GetByEmailAsync(request.Email);
         if (existingUser != null)
         {
@@ -57,7 +52,6 @@ public class AuthService(
             return null;
         }
 
-        // Create new user
         var newUser = new User
         {
             Username = request.Username,
@@ -96,7 +90,6 @@ public class AuthService(
             return null;
         }
 
-        // Mark old token as used
         storedToken.IsUsed = true;
         unitOfWork.RefreshTokens.Update(storedToken);
         await unitOfWork.CompleteAsync();
@@ -104,7 +97,6 @@ public class AuthService(
         logger.LogInformation("Successful token refresh for user: {Email}",
             storedToken.User.Email);
 
-        // Generate new token and response
         return await GenerateAuthenticationResponseAsync(storedToken.User);
     }
 
@@ -153,7 +145,6 @@ public class AuthService(
         var token = jwtService.GenerateJwtToken(user);
         var refreshToken = jwtService.GenerateRefreshToken(user);
 
-        // Save refresh token to database through Unit of Work
         await unitOfWork.RefreshTokens.AddAsync(refreshToken);
         await unitOfWork.CompleteAsync();
 

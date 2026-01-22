@@ -4,10 +4,6 @@ using System.Text.Json;
 
 namespace KomunalkaAPI.Services.Auth.Providers;
 
-/// <summary>
-/// Google OAuth provider implementation
-/// Handles Google Sign-In using ID tokens
-/// </summary>
 public class GoogleOAuthProvider : IOAuthProvider
 {
     private readonly IConfiguration _configuration;
@@ -26,10 +22,6 @@ public class GoogleOAuthProvider : IOAuthProvider
         _httpClient = httpClientFactory.CreateClient();
     }
 
-    /// <summary>
-    /// Validate Google ID token and extract user info
-    /// Uses Google.Apis.Auth library for validation
-    /// </summary>
     public async Task<OAuthUserInfo?> ValidateTokenAsync(string idToken)
     {
         try
@@ -41,7 +33,6 @@ public class GoogleOAuthProvider : IOAuthProvider
                 return null;
             }
 
-            // Validate ID token using Google library
             var validationSettings = new GoogleJsonWebSignature.ValidationSettings
             {
                 Audience = new[] { clientId }
@@ -56,7 +47,7 @@ public class GoogleOAuthProvider : IOAuthProvider
             return new OAuthUserInfo
             {
                 Provider = ProviderName,
-                ExternalId = payload.Subject, // 'sub' claim
+                ExternalId = payload.Subject,
                 Email = payload.Email,
                 EmailVerified = payload.EmailVerified,
                 FirstName = payload.GivenName,
@@ -82,10 +73,6 @@ public class GoogleOAuthProvider : IOAuthProvider
         }
     }
 
-    /// <summary>
-    /// Exchange authorization code for tokens
-    /// Not commonly used with Google Sign-In (usually use ID token flow)
-    /// </summary>
     public async Task<OAuthUserInfo?> ExchangeCodeAsync(string code, string? redirectUri = null)
     {
         try
@@ -100,7 +87,6 @@ public class GoogleOAuthProvider : IOAuthProvider
                 return null;
             }
 
-            // Exchange code for tokens
             var requestData = new Dictionary<string, string>
             {
                 { "code", code },
@@ -131,7 +117,6 @@ public class GoogleOAuthProvider : IOAuthProvider
                 return null;
             }
 
-            // Validate the ID token we received
             return await ValidateTokenAsync(tokenResponse.IdToken);
         }
         catch (Exception ex)
@@ -141,9 +126,6 @@ public class GoogleOAuthProvider : IOAuthProvider
         }
     }
 
-    /// <summary>
-    /// Get Google OAuth authorization URL
-    /// </summary>
     public string GetAuthorizationUrl(string state, string? redirectUri = null)
     {
         var clientId = _configuration["OAuth:Google:ClientId"];
@@ -162,9 +144,6 @@ public class GoogleOAuthProvider : IOAuthProvider
         return authUrl;
     }
 
-    /// <summary>
-    /// Google token response model
-    /// </summary>
     private class GoogleTokenResponse
     {
         [System.Text.Json.Serialization.JsonPropertyName("access_token")]

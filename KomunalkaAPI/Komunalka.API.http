@@ -60,12 +60,53 @@ Authorization: Bearer {{jwt_token}}
 GET {{KomunalkaAPI_HostAddress}}/auth/validate-token
 Authorization: Bearer {{jwt_token}}
 
-# Expected 200 OK (sample)
-# {
-#   "isValid": true,
-#   "expiresAt": "2025-12-10T11:00:00Z",
-#   "claims": ["sub", "email", "role"]
-# }
+### OAuth Authentication Endpoints
+
+###
+# Get Google OAuth authorization URL
+GET {{KomunalkaAPI_HostAddress}}/auth/oauth/google/authorize
+
+###
+# Get GitHub OAuth authorization URL
+GET {{KomunalkaAPI_HostAddress}}/auth/oauth/github/authorize
+
+###
+# OAuth login with ID token (Google) or access token (GitHub)
+# Provider: "Google" or "GitHub"
+POST {{KomunalkaAPI_HostAddress}}/auth/oauth/login
+Content-Type: application/json
+
+{
+  "provider": "Google",
+  "token": "your-id-token-or-access-token"
+}
+
+###
+# OAuth callback (authorization code flow)
+POST {{KomunalkaAPI_HostAddress}}/auth/oauth/callback
+Content-Type: application/json
+
+{
+  "provider": "GitHub",
+  "code": "authorization-code-from-provider",
+  "state": "state-parameter"
+}
+
+###
+# Link OAuth provider to existing account (requires authentication)
+POST {{KomunalkaAPI_HostAddress}}/auth/oauth/link
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "provider": "GitHub",
+  "token": "your-access-token"
+}
+
+###
+# Unlink OAuth provider from account (requires authentication)
+DELETE {{KomunalkaAPI_HostAddress}}/auth/oauth/unlink/GitHub
+Authorization: Bearer {{jwt_token}}
 
 ### User Management Endpoints
 
@@ -818,6 +859,15 @@ GET http://localhost:8080/health/ready
 # - Most endpoints require JWT authentication via Bearer token
 # - Register a user first, then login to get JWT and refresh tokens
 # - Update jwt_token and refresh_token variables after login
+#
+# OAuth Authentication (Social Login):
+# - Supported providers: Google, GitHub
+# - Two flows available:
+#   1. ID Token flow (mobile/SPA): POST /auth/oauth/login with provider token
+#   2. Authorization Code flow (web): GET /auth/oauth/{provider}/authorize → callback
+# - OAuth users are auto-created on first login
+# - Link/unlink OAuth to existing account: POST/DELETE /auth/oauth/link
+# - Configure credentials in .env: OAUTH__Google__ClientId, OAUTH__GitHub__ClientId, etc.
 #
 # User Management:
 # - Update user endpoint (PUT /users/{id}) supports optional password change

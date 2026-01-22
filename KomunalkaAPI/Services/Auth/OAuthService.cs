@@ -5,10 +5,6 @@ using KomunalkaAPI.Services.Auth.Providers;
 
 namespace KomunalkaAPI.Services.Auth;
 
-/// <summary>
-/// OAuth authentication service implementation
-/// Coordinates OAuth providers and user management
-/// </summary>
 public class OAuthService : IOAuthService
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -36,7 +32,6 @@ public class OAuthService : IOAuthService
             "OAuth authentication attempt with provider: {Provider}",
             providerName);
 
-        // Find appropriate provider
         var provider = GetProvider(providerName);
         if (provider == null)
         {
@@ -44,7 +39,6 @@ public class OAuthService : IOAuthService
             return null;
         }
 
-        // Validate token and get user info
         var userInfo = await provider.ValidateTokenAsync(token);
         if (userInfo == null)
         {
@@ -54,7 +48,6 @@ public class OAuthService : IOAuthService
             return null;
         }
 
-        // Find or create user
         var user = await FindOrCreateUserAsync(userInfo);
         if (user == null)
         {
@@ -65,7 +58,6 @@ public class OAuthService : IOAuthService
             return null;
         }
 
-        // Update last login time
         user.LastLoginAt = DateTime.UtcNow;
         await _unitOfWork.CompleteAsync();
 
@@ -74,7 +66,6 @@ public class OAuthService : IOAuthService
             user.Id,
             providerName);
 
-        // Generate JWT and refresh token
         return await GenerateAuthenticationResponseAsync(user);
     }
 
@@ -84,7 +75,6 @@ public class OAuthService : IOAuthService
             "OAuth callback received for provider: {Provider}",
             request.Provider);
 
-        // Check for errors
         if (!string.IsNullOrEmpty(request.Error))
         {
             _logger.LogWarning(
@@ -100,7 +90,6 @@ public class OAuthService : IOAuthService
             return null;
         }
 
-        // Find appropriate provider
         var provider = GetProvider(request.Provider);
         if (provider == null)
         {
@@ -108,7 +97,6 @@ public class OAuthService : IOAuthService
             return null;
         }
 
-        // Exchange code for tokens
         var userInfo = await provider.ExchangeCodeAsync(request.Code);
         if (userInfo == null)
         {
@@ -118,18 +106,15 @@ public class OAuthService : IOAuthService
             return null;
         }
 
-        // Find or create user
         var user = await FindOrCreateUserAsync(userInfo);
         if (user == null)
         {
             return null;
         }
 
-        // Update last login time
         user.LastLoginAt = DateTime.UtcNow;
         await _unitOfWork.CompleteAsync();
 
-        // Generate JWT and refresh token
         return await GenerateAuthenticationResponseAsync(user);
     }
 
@@ -141,7 +126,6 @@ public class OAuthService : IOAuthService
             throw new ArgumentException($"OAuth provider not found: {providerName}");
         }
 
-        // Generate state for CSRF protection
         var state = GenerateState();
 
         return provider.GetAuthorizationUrl(state, redirectUri);
@@ -175,7 +159,6 @@ public class OAuthService : IOAuthService
             return false;
         }
 
-        // Check if this OAuth account is already linked to another user
         var existingUser = await _unitOfWork.Users.GetByProviderAsync(
             userInfo.Provider,
             userInfo.ExternalId);
@@ -188,7 +171,6 @@ public class OAuthService : IOAuthService
             return false;
         }
 
-        // Link OAuth to user
         user.AuthProvider = userInfo.Provider;
         user.ExternalId = userInfo.ExternalId;
         user.EmailVerified = userInfo.EmailVerified || user.EmailVerified;
@@ -226,7 +208,6 @@ public class OAuthService : IOAuthService
             return false;
         }
 
-        // Don't allow unlinking if user has no password (would lock them out)
         if (user.Password == null)
         {
             _logger.LogWarning(
@@ -234,7 +215,6 @@ public class OAuthService : IOAuthService
             return false;
         }
 
-        // Unlink provider
         user.AuthProvider = "Local";
         user.ExternalId = null;
 
@@ -249,12 +229,8 @@ public class OAuthService : IOAuthService
         return true;
     }
 
-    /// <summary>
-    /// Find or create user from OAuth user info
-    /// </summary>
     private async Task<User?> FindOrCreateUserAsync(OAuthUserInfo userInfo)
     {
-        // 1. Try to find by provider + externalId
         var user = await _unitOfWork.Users.GetByProviderAsync(
             userInfo.Provider,
             userInfo.ExternalId);
@@ -267,13 +243,10 @@ public class OAuthService : IOAuthService
             return user;
         }
 
-        // 2. Try to find by email
         user = await _unitOfWork.Users.GetByEmailAsync(userInfo.Email);
 
         if (user != null)
         {
-            // User exists with this email
-            // Only auto-link if user has no password (OAuth-only account)
             if (user.Password != null)
             {
                 _logger.LogWarning(
@@ -282,7 +255,6 @@ public class OAuthService : IOAuthService
                 return null;
             }
 
-            // Safe to auto-link - user only has OAuth accounts
             _logger.LogInformation(
                 "Auto-linking OAuth provider to existing user: {UserId}",
                 user.Id);
@@ -296,7 +268,6 @@ public class OAuthService : IOAuthService
             return user;
         }
 
-        // 3. Create new user
         _logger.LogInformation(
             "Creating new user from OAuth provider: {Provider}, Email: {Email}",
             userInfo.Provider,
@@ -308,7 +279,7 @@ public class OAuthService : IOAuthService
             Email = userInfo.Email,
             FirstName = userInfo.FirstName,
             LastName = userInfo.LastName,
-            Password = null, // OAuth user doesn't have password
+            Password = null,
             AuthProvider = userInfo.Provider,
             ExternalId = userInfo.ExternalId,
             EmailVerified = userInfo.EmailVerified,
@@ -326,26 +297,18 @@ public class OAuthService : IOAuthService
         return newUser;
     }
 
-    /// <summary>
-    /// Generate unique username from OAuth user info
-    /// </summary>
     private async Task<string> GenerateUniqueUsernameAsync(OAuthUserInfo userInfo)
     {
-        // Try to use provider username first
         if (!string.IsNullOrEmpty(userInfo.Username))
         {
             var baseUsername = userInfo.Username.Replace(" ", "").ToLower();
             return await EnsureUniqueUsernameAsync(baseUsername);
         }
 
-        // Try email username part
         var emailUsername = userInfo.Email.Split('@')[0].Replace(".", "").Replace("+", "");
         return await EnsureUniqueUsernameAsync(emailUsername);
     }
 
-    /// <summary>
-    /// Ensure username is unique by appending number if needed
-    /// </summary>
     private async Task<string> EnsureUniqueUsernameAsync(string baseUsername)
     {
         var username = baseUsername;
@@ -364,9 +327,6 @@ public class OAuthService : IOAuthService
         }
     }
 
-    /// <summary>
-    /// Generate authentication response with JWT tokens
-    /// </summary>
     private async Task<AuthenticationResponse> GenerateAuthenticationResponseAsync(User user)
     {
         var token = _jwtService.GenerateJwtToken(user);
@@ -389,18 +349,12 @@ public class OAuthService : IOAuthService
         };
     }
 
-    /// <summary>
-    /// Get OAuth provider by name
-    /// </summary>
     private IOAuthProvider? GetProvider(string providerName)
     {
         return _oauthProviders.FirstOrDefault(
             p => p.ProviderName.Equals(providerName, StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>
-    /// Generate random state for CSRF protection
-    /// </summary>
     private static string GenerateState()
     {
         return Convert.ToBase64String(

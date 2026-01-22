@@ -96,12 +96,6 @@ public class AuthController : ControllerBase
         return Ok(new { Message = "Token is valid" });
     }
 
-    // OAuth Endpoints
-
-    /// <summary>
-    /// Login with OAuth provider (ID token flow)
-    /// Used by mobile apps and SPAs
-    /// </summary>
     [HttpPost("oauth/login")]
     public async Task<IActionResult> OAuthLogin([FromBody] OAuthLoginRequest request)
     {
@@ -122,10 +116,6 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>
-    /// Get OAuth authorization URL for provider
-    /// Used to redirect user to provider's login page
-    /// </summary>
     [HttpGet("oauth/{provider}/authorize")]
     public IActionResult GetAuthorizationUrl(string provider, [FromQuery] string? redirectUri = null)
     {
@@ -140,10 +130,6 @@ public class AuthController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// OAuth callback (authorization code flow)
-    /// Called by provider after user authorizes app
-    /// </summary>
     [HttpPost("oauth/callback")]
     public async Task<IActionResult> OAuthCallback([FromBody] OAuthCallbackRequest request)
     {
@@ -171,10 +157,6 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>
-    /// Link OAuth provider to current user account
-    /// Allows user to add OAuth login to existing account
-    /// </summary>
     [Authorize]
     [HttpPost("oauth/link")]
     public async Task<IActionResult> LinkOAuthProvider([FromBody] OAuthLoginRequest request)
@@ -203,10 +185,6 @@ public class AuthController : ControllerBase
         return Ok(new { Message = "OAuth provider linked successfully" });
     }
 
-    /// <summary>
-    /// Unlink OAuth provider from current user account
-    /// Removes OAuth login method (requires password to be set)
-    /// </summary>
     [Authorize]
     [HttpDelete("oauth/unlink/{provider}")]
     public async Task<IActionResult> UnlinkOAuthProvider(string provider)

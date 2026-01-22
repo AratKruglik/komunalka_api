@@ -151,6 +151,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // OAuth Services
 builder.Services.AddHttpClient(); // Required for OAuth providers
 builder.Services.AddTransient<KomunalkaAPI.Services.Auth.Providers.IOAuthProvider, KomunalkaAPI.Services.Auth.Providers.GoogleOAuthProvider>();
+builder.Services.AddTransient<KomunalkaAPI.Services.Auth.Providers.IOAuthProvider, KomunalkaAPI.Services.Auth.Providers.GitHubOAuthProvider>();
 builder.Services.AddScoped<IOAuthService, OAuthService>();
 builder.Services.AddScoped<KomunalkaAPI.Services.Tariff.ITariffCalculationService, KomunalkaAPI.Services.Tariff.TariffCalculationService>();
 builder.Services.AddScoped<KomunalkaAPI.Services.MeterReading.IMeterReadingService, KomunalkaAPI.Services.MeterReading.MeterReadingService>();

@@ -5,9 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KomunalkaAPI.Middleware;
 
-/// <summary>
-/// Middleware for centralized exception handling
-/// </summary>
 public class ExceptionHandlerMiddleware
 {
     private readonly RequestDelegate _next;
@@ -73,7 +70,6 @@ public class ExceptionHandlerMiddleware
                 response.Message = "Database update error";
                 context.Response.StatusCode = (int)HttpStatusCode.Conflict;
 
-                // Add detailed information only in Development
                 if (_environment.IsDevelopment())
                 {
                     response.Details = dbEx.InnerException?.Message ?? dbEx.Message;
@@ -91,7 +87,6 @@ public class ExceptionHandlerMiddleware
                 response.Message = "Internal server error";
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
-                // Add detailed information only in Development
                 if (_environment.IsDevelopment())
                 {
                     response.Details = exception.ToString();

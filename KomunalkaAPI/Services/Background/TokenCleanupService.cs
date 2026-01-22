@@ -2,9 +2,6 @@ using KomunalkaAPI.Repositories;
 
 namespace KomunalkaAPI.Services.Background;
 
-/// <summary>
-/// Background service for periodic cleanup of expired refresh tokens
-/// </summary>
 public class TokenCleanupService(IServiceProvider serviceProvider, ILogger<TokenCleanupService> logger) : BackgroundService
 {
     private readonly TimeSpan _cleanupInterval = TimeSpan.FromHours(1);
@@ -28,7 +25,6 @@ public class TokenCleanupService(IServiceProvider serviceProvider, ILogger<Token
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error cleaning up expired tokens");
-                // Wait less time after error
                 await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
             }
         }

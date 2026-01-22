@@ -3,14 +3,8 @@ using KomunalkaAPI.Models.Responses;
 
 namespace KomunalkaAPI.Extensions;
 
-/// <summary>
-/// Extension methods for converting pagination to Laravel-compatible format
-/// </summary>
 public static class PaginationExtensions
 {
-    /// <summary>
-    /// Converts PagedResult to paginated response (Laravel-compatible format)
-    /// </summary>
     public static PaginatedResponse<TDto> ToPaginatedResponse<TEntity, TDto>(
         this PagedResult<TEntity> pagedResult,
         List<TDto> mappedData,
@@ -41,9 +35,6 @@ public static class PaginationExtensions
         };
     }
 
-    /// <summary>
-    /// Converts PagedResult to paginated response with automatic mapping
-    /// </summary>
     public static PaginatedResponse<T> ToPaginatedResponse<T>(
         this PagedResult<T> pagedResult,
         HttpRequest request)
