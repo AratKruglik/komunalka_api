@@ -193,6 +193,9 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 
+    options.SupportNonNullableReferenceTypes();
+    options.SchemaFilter<KomunalkaAPI.Swagger.FormFileSchemaFilter>();
+
     // Add XML documentation
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
