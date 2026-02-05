@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using KomunalkaAPI.DTO;
 using KomunalkaAPI.Repositories;
 using Microsoft.AspNetCore.Authorization;
@@ -21,15 +22,64 @@ public class ServiceProvidersController : ControllerBase
         _unitOfWork = unitOfWork;
     }
 
-    /// <summary>
-    /// Create a new service provider with tariffs
-    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        if (!TryGetUserId(out var userId))
+            return Unauthorized(new { error = "Invalid user credentials" });
+
+        var userAddresses = await _unitOfWork.UserAddresses.GetByUserIdAsync(userId);
+        var addressIds = userAddresses.Select(ua => ua.AddressId);
+
+        var providers = await _unitOfWork.ServiceProviders.GetByAddressIdsAsync(addressIds);
+        var response = providers.Select(MapToDto);
+
+        return Ok(new ApiResponse<IEnumerable<ServiceProviderWithTariffsDto>> { Data = response });
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        if (!TryGetUserId(out var userId))
+            return Unauthorized(new { error = "Invalid user credentials" });
+
+        var provider = await LoadProviderWithTariffs(id);
+        if (provider == null)
+            return NotFound(new { error = "Service provider not found" });
+
+        if (!await _unitOfWork.UserAddresses.UserHasAccessToAddressAsync(userId, provider.AddressId))
+            return Forbid();
+
+        return Ok(new ApiResponse<ServiceProviderWithTariffsDto> { Data = MapToDto(provider) });
+    }
+
+    [HttpGet("address/{addressId}")]
+    public async Task<IActionResult> GetByAddressId(int addressId)
+    {
+        if (!TryGetUserId(out var userId))
+            return Unauthorized(new { error = "Invalid user credentials" });
+
+        if (!await _unitOfWork.UserAddresses.UserHasAccessToAddressAsync(userId, addressId))
+            return Forbid();
+
+        var providers = await _unitOfWork.ServiceProviders.GetByAddressIdAsync(addressId);
+        var response = providers.Select(MapToDto);
+
+        return Ok(new ApiResponse<IEnumerable<ServiceProviderWithTariffsDto>> { Data = response });
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateServiceProviderDto dto)
     {
-        // Create service provider
+        if (!TryGetUserId(out var userId))
+            return Unauthorized(new { error = "Invalid user credentials" });
+
+        if (!await _unitOfWork.UserAddresses.UserHasAccessToAddressAsync(userId, dto.AddressId))
+            return Forbid();
+
         var serviceProvider = new ServiceProviderModel
         {
+            AddressId = dto.AddressId,
             Name = dto.Name,
             Description = dto.Description,
             Phone = dto.Phone,
@@ -43,11 +93,10 @@ public class ServiceProvidersController : ControllerBase
         await _unitOfWork.ServiceProviders.AddAsync(serviceProvider);
         await _unitOfWork.CompleteAsync();
 
-        // Create tariffs for the service provider
         var tariffs = new List<TariffModel>();
         foreach (var tariffDto in dto.Tariffs)
         {
-            var tariff = new TariffModel
+            tariffs.Add(new TariffModel
             {
                 ServiceProviderId = serviceProvider.Id,
                 UtilityTypeId = tariffDto.UtilityTypeId,
@@ -60,137 +109,94 @@ public class ServiceProvidersController : ControllerBase
                 Notes = tariffDto.Notes,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
-            };
-
-            tariffs.Add(tariff);
+            });
         }
 
-        if (tariffs.Any())
+        if (tariffs.Count > 0)
         {
             var context = _unitOfWork.GetContext();
             await context.Set<TariffModel>().AddRangeAsync(tariffs);
             await _unitOfWork.CompleteAsync();
         }
 
-        // Load created service provider with tariffs
-        var createdProvider = await _unitOfWork.GetContext()
-            .Set<ServiceProviderModel>()
-            .Include(sp => sp.Tariffs)
-                .ThenInclude(t => t.UtilityType)
-            .Include(sp => sp.Tariffs)
-                .ThenInclude(t => t.Currency)
-            .FirstOrDefaultAsync(sp => sp.Id == serviceProvider.Id);
+        var createdProvider = await LoadProviderWithTariffs(serviceProvider.Id);
 
-        if (createdProvider == null)
-        {
-            return StatusCode(500, new { message = "Failed to retrieve created service provider" });
-        }
-
-        // Map to DTO
-        var response = new ServiceProviderWithTariffsDto
-        {
-            Id = createdProvider.Id,
-            Name = createdProvider.Name,
-            Description = createdProvider.Description,
-            Phone = createdProvider.Phone,
-            Email = createdProvider.Email,
-            Website = createdProvider.Website,
-            IsActive = createdProvider.IsActive,
-            CreatedAt = createdProvider.CreatedAt,
-            UpdatedAt = createdProvider.UpdatedAt,
-            Tariffs = createdProvider.Tariffs.Select(t => new TariffDto
-            {
-                Id = t.Id,
-                ServiceProviderId = t.ServiceProviderId,
-                UtilityTypeId = t.UtilityTypeId,
-                CurrencyId = t.CurrencyId,
-                PricingModel = t.PricingModel,
-                BaseRate = t.BaseRate,
-                ServiceFee = t.ServiceFee,
-                EffectiveFrom = t.EffectiveFrom,
-                EffectiveTo = t.EffectiveTo,
-                Notes = t.Notes,
-                CreatedAt = t.CreatedAt,
-                UpdatedAt = t.UpdatedAt,
-                UtilityTypeName = t.UtilityType?.DisplayName,
-                CurrencyCode = t.Currency?.Code,
-                CurrencySymbol = t.Currency?.Symbol
-            }).ToList()
-        };
-
-        return CreatedAtAction(nameof(GetById), new { id = serviceProvider.Id }, new { data = response });
+        return CreatedAtAction(nameof(GetById), new { id = serviceProvider.Id },
+            new ApiResponse<ServiceProviderWithTariffsDto> { Data = MapToDto(createdProvider!) });
     }
 
-    /// <summary>
-    /// Get service provider by ID with tariffs
-    /// </summary>
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateServiceProviderDto dto)
     {
-        var serviceProvider = await _unitOfWork.GetContext()
+        if (!TryGetUserId(out var userId))
+            return Unauthorized(new { error = "Invalid user credentials" });
+
+        var provider = await _unitOfWork.ServiceProviders.GetByIdAsync(id);
+        if (provider == null)
+            return NotFound(new { error = "Service provider not found" });
+
+        if (!await _unitOfWork.UserAddresses.UserHasAccessToAddressAsync(userId, provider.AddressId))
+            return Forbid();
+
+        if (dto.Name != null) provider.Name = dto.Name;
+        if (dto.Description != null) provider.Description = dto.Description;
+        if (dto.Phone != null) provider.Phone = dto.Phone;
+        if (dto.Email != null) provider.Email = dto.Email;
+        if (dto.Website != null) provider.Website = dto.Website;
+        if (dto.IsActive.HasValue) provider.IsActive = dto.IsActive.Value;
+        provider.UpdatedAt = DateTime.UtcNow;
+
+        _unitOfWork.ServiceProviders.Update(provider);
+        await _unitOfWork.CompleteAsync();
+
+        var updatedProvider = await LoadProviderWithTariffs(id);
+
+        return Ok(new ApiResponse<ServiceProviderWithTariffsDto> { Data = MapToDto(updatedProvider!) });
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        if (!TryGetUserId(out var userId))
+            return Unauthorized(new { error = "Invalid user credentials" });
+
+        var provider = await _unitOfWork.ServiceProviders.GetByIdAsync(id);
+        if (provider == null)
+            return NotFound(new { error = "Service provider not found" });
+
+        if (!await _unitOfWork.UserAddresses.UserHasAccessToAddressAsync(userId, provider.AddressId))
+            return Forbid();
+
+        _unitOfWork.ServiceProviders.Delete(provider);
+        await _unitOfWork.CompleteAsync();
+
+        return NoContent();
+    }
+
+    private bool TryGetUserId(out int userId)
+    {
+        userId = 0;
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return !string.IsNullOrEmpty(claim) && int.TryParse(claim, out userId);
+    }
+
+    private async Task<ServiceProviderModel?> LoadProviderWithTariffs(int id)
+    {
+        return await _unitOfWork.GetContext()
             .Set<ServiceProviderModel>()
             .Include(sp => sp.Tariffs)
                 .ThenInclude(t => t.UtilityType)
             .Include(sp => sp.Tariffs)
                 .ThenInclude(t => t.Currency)
             .FirstOrDefaultAsync(sp => sp.Id == id);
-
-        if (serviceProvider == null)
-        {
-            return NotFound(new { message = "Service provider not found" });
-        }
-
-        var response = new ServiceProviderWithTariffsDto
-        {
-            Id = serviceProvider.Id,
-            Name = serviceProvider.Name,
-            Description = serviceProvider.Description,
-            Phone = serviceProvider.Phone,
-            Email = serviceProvider.Email,
-            Website = serviceProvider.Website,
-            IsActive = serviceProvider.IsActive,
-            CreatedAt = serviceProvider.CreatedAt,
-            UpdatedAt = serviceProvider.UpdatedAt,
-            Tariffs = serviceProvider.Tariffs.Select(t => new TariffDto
-            {
-                Id = t.Id,
-                ServiceProviderId = t.ServiceProviderId,
-                UtilityTypeId = t.UtilityTypeId,
-                CurrencyId = t.CurrencyId,
-                PricingModel = t.PricingModel,
-                BaseRate = t.BaseRate,
-                ServiceFee = t.ServiceFee,
-                EffectiveFrom = t.EffectiveFrom,
-                EffectiveTo = t.EffectiveTo,
-                Notes = t.Notes,
-                CreatedAt = t.CreatedAt,
-                UpdatedAt = t.UpdatedAt,
-                UtilityTypeName = t.UtilityType?.DisplayName,
-                CurrencyCode = t.Currency?.Code,
-                CurrencySymbol = t.Currency?.Symbol
-            }).ToList()
-        };
-
-        return Ok(new { data = response });
     }
 
-    /// <summary>
-    /// Get all service providers
-    /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+    private static ServiceProviderWithTariffsDto MapToDto(ServiceProviderModel sp)
     {
-        var serviceProviders = await _unitOfWork.GetContext()
-            .Set<ServiceProviderModel>()
-            .Include(sp => sp.Tariffs)
-                .ThenInclude(t => t.UtilityType)
-            .Include(sp => sp.Tariffs)
-                .ThenInclude(t => t.Currency)
-            .ToListAsync();
-
-        var response = serviceProviders.Select(sp => new ServiceProviderWithTariffsDto
+        return new ServiceProviderWithTariffsDto
         {
             Id = sp.Id,
+            AddressId = sp.AddressId,
             Name = sp.Name,
             Description = sp.Description,
             Phone = sp.Phone,
@@ -217,8 +223,6 @@ public class ServiceProvidersController : ControllerBase
                 CurrencyCode = t.Currency?.Code,
                 CurrencySymbol = t.Currency?.Symbol
             }).ToList()
-        }).ToList();
-
-        return Ok(new { data = response });
+        };
     }
 }

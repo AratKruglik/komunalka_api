@@ -24,4 +24,27 @@ public class ServiceProviderRepository : Repository<Models.ServiceProvider>, ISe
         return await _appContext.ServiceProviders
             .FirstOrDefaultAsync(sp => sp.Name == name);
     }
+
+    public async Task<IEnumerable<Models.ServiceProvider>> GetByAddressIdAsync(int addressId)
+    {
+        return await _appContext.ServiceProviders
+            .Where(sp => sp.AddressId == addressId)
+            .Include(sp => sp.Tariffs)
+                .ThenInclude(t => t.UtilityType)
+            .Include(sp => sp.Tariffs)
+                .ThenInclude(t => t.Currency)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Models.ServiceProvider>> GetByAddressIdsAsync(IEnumerable<int> addressIds)
+    {
+        var ids = addressIds.ToList();
+        return await _appContext.ServiceProviders
+            .Where(sp => ids.Contains(sp.AddressId))
+            .Include(sp => sp.Tariffs)
+                .ThenInclude(t => t.UtilityType)
+            .Include(sp => sp.Tariffs)
+                .ThenInclude(t => t.Currency)
+            .ToListAsync();
+    }
 }

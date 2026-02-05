@@ -3,6 +3,7 @@ namespace KomunalkaAPI.DTO;
 public class ServiceProviderWithTariffsDto
 {
     public int Id { get; set; }
+    public int AddressId { get; set; }
     public required string Name { get; set; }
     public string? Description { get; set; }
     public string? Phone { get; set; }
