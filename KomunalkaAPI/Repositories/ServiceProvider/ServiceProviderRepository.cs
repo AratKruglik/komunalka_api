@@ -29,6 +29,7 @@ public class ServiceProviderRepository : Repository<Models.ServiceProvider>, ISe
     {
         return await _appContext.ServiceProviders
             .Where(sp => sp.AddressId == addressId)
+            .Include(sp => sp.UtilityType)
             .Include(sp => sp.Tariffs)
                 .ThenInclude(t => t.UtilityType)
             .Include(sp => sp.Tariffs)
@@ -41,6 +42,7 @@ public class ServiceProviderRepository : Repository<Models.ServiceProvider>, ISe
         var ids = addressIds.ToList();
         return await _appContext.ServiceProviders
             .Where(sp => ids.Contains(sp.AddressId))
+            .Include(sp => sp.UtilityType)
             .Include(sp => sp.Tariffs)
                 .ThenInclude(t => t.UtilityType)
             .Include(sp => sp.Tariffs)

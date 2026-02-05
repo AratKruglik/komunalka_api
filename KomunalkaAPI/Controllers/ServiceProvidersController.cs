@@ -80,6 +80,7 @@ public class ServiceProvidersController : ControllerBase
         var serviceProvider = new ServiceProviderModel
         {
             AddressId = dto.AddressId,
+            UtilityTypeId = dto.UtilityTypeId,
             Name = dto.Name,
             Description = dto.Description,
             Phone = dto.Phone,
@@ -144,6 +145,7 @@ public class ServiceProvidersController : ControllerBase
         if (dto.Email != null) provider.Email = dto.Email;
         if (dto.Website != null) provider.Website = dto.Website;
         if (dto.IsActive.HasValue) provider.IsActive = dto.IsActive.Value;
+        if (dto.UtilityTypeId.HasValue) provider.UtilityTypeId = dto.UtilityTypeId.Value;
         provider.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.ServiceProviders.Update(provider);
@@ -184,6 +186,7 @@ public class ServiceProvidersController : ControllerBase
     {
         return await _unitOfWork.GetContext()
             .Set<ServiceProviderModel>()
+            .Include(sp => sp.UtilityType)
             .Include(sp => sp.Tariffs)
                 .ThenInclude(t => t.UtilityType)
             .Include(sp => sp.Tariffs)
@@ -197,6 +200,8 @@ public class ServiceProvidersController : ControllerBase
         {
             Id = sp.Id,
             AddressId = sp.AddressId,
+            UtilityTypeId = sp.UtilityTypeId,
+            UtilityTypeName = sp.UtilityType?.DisplayName,
             Name = sp.Name,
             Description = sp.Description,
             Phone = sp.Phone,

@@ -37,6 +37,10 @@ public class ServiceProvider
     [Column("address_id")]
     public int AddressId { get; set; }
 
+    [Required]
+    [Column("utility_type_id")]
+    public int UtilityTypeId { get; set; }
+
     [Column("is_active")]
     public bool IsActive { get; set; } = true;
 
@@ -49,6 +53,9 @@ public class ServiceProvider
     // Navigation properties
     [ForeignKey(nameof(AddressId))]
     public virtual Address Address { get; set; } = null!;
+
+    [ForeignKey(nameof(UtilityTypeId))]
+    public virtual UtilityType UtilityType { get; set; } = null!;
 
     public virtual ICollection<Meter> Meters { get; set; } = new List<Meter>();
     public virtual ICollection<Tariff> Tariffs { get; set; } = new List<Tariff>();

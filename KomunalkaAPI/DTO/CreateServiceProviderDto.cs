@@ -8,6 +8,9 @@ public class CreateServiceProviderDto
     public int AddressId { get; set; }
 
     [Required]
+    public int UtilityTypeId { get; set; }
+
+    [Required]
     [StringLength(255)]
     public required string Name { get; set; }
 

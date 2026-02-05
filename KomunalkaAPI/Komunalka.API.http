@@ -2027,6 +2027,54 @@ GET {{KomunalkaAPI_HostAddress}}/meter-readings/photos/1/thumbnail
 # }
 
 ### ============================================================================
+### Utility Type (Тип комунальної послуги) Endpoints
+### ============================================================================
+
+###
+# Get all active utility types (no auth required)
+GET {{KomunalkaAPI_HostAddress}}/utility-types
+Accept: application/json
+
+# Response 200 OK:
+# {
+#   "data": [
+#     {
+#       "id": 1,
+#       "slug": "electricity",
+#       "displayName": "Електроенергія",
+#       "unit": "kWh",
+#       "isActive": true
+#     },
+#     {
+#       "id": 2,
+#       "slug": "gas",
+#       "displayName": "Газопостачання",
+#       "unit": "m³",
+#       "isActive": true
+#     }
+#   ]
+# }
+
+###
+# Get utility type by ID (no auth required)
+GET {{KomunalkaAPI_HostAddress}}/utility-types/1
+Accept: application/json
+
+# Response 200 OK:
+# {
+#   "data": {
+#     "id": 1,
+#     "slug": "electricity",
+#     "displayName": "Електроенергія",
+#     "unit": "kWh",
+#     "isActive": true
+#   }
+# }
+#
+# Response 404 Not Found:
+# { "error": "Utility type not found" }
+
+### ============================================================================
 ### Service Provider (Постачальник послуг) Management Endpoints
 ### ============================================================================
 
@@ -2121,6 +2169,7 @@ Authorization: Bearer {{jwt_token}}
 
 {
   "addressId": 1,
+  "utilityTypeId": 3,
   "name": "Київводоканал",
   "description": "Постачальник водопостачання",
   "phone": "+380441112233",
@@ -2162,7 +2211,8 @@ Authorization: Bearer {{jwt_token}}
 
 {
   "name": "Київенерго (оновлено)",
-  "phone": "+380449876543"
+  "phone": "+380449876543",
+  "utilityTypeId": 1
 }
 
 # Response 200 OK:

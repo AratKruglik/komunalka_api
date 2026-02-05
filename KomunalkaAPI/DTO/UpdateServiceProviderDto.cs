@@ -21,4 +21,6 @@ public class UpdateServiceProviderDto
     public string? Website { get; set; }
 
     public bool? IsActive { get; set; }
+
+    public int? UtilityTypeId { get; set; }
 }

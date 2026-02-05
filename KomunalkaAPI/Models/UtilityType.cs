@@ -43,4 +43,5 @@ public class UtilityType
     // Navigation properties
     public virtual ICollection<Meter> Meters { get; set; } = new List<Meter>();
     public virtual ICollection<Tariff> Tariffs { get; set; } = new List<Tariff>();
+    public virtual ICollection<ServiceProvider> ServiceProviders { get; set; } = new List<ServiceProvider>();
 }
