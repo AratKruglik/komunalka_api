@@ -5,9 +5,6 @@ using KomunalkaAPI.Repositories;
 
 namespace KomunalkaAPI.Services.Auth;
 
-/// <summary>
-/// User authentication service
-/// </summary>
 public class AuthService(
     IUnitOfWork unitOfWork,
     IJwtService jwtService,
@@ -20,7 +17,19 @@ public class AuthService(
 
         var user = await unitOfWork.Users.GetByEmailAsync(request.Email);
 
-        if (user == null || !VerifyPassword(request.Password, user.Password))
+        if (user == null)
+        {
+            logger.LogWarning("Failed authentication attempt for email: {Email}", request.Email);
+            return null;
+        }
+
+        if (user.Password == null)
+        {
+            logger.LogWarning("OAuth user attempted password login: {Email}", request.Email);
+            return null;
+        }
+
+        if (!VerifyPassword(request.Password, user.Password))
         {
             logger.LogWarning("Failed authentication attempt for email: {Email}", request.Email);
             return null;
@@ -36,7 +45,6 @@ public class AuthService(
     {
         logger.LogInformation("Registration attempt for new user: {Email}", request.Email);
 
-        // Check if user with this email already exists
         var existingUser = await unitOfWork.Users.GetByEmailAsync(request.Email);
         if (existingUser != null)
         {
@@ -44,7 +52,6 @@ public class AuthService(
             return null;
         }
 
-        // Create new user
         var newUser = new User
         {
             Username = request.Username,
@@ -53,7 +60,9 @@ public class AuthService(
             PhoneNumber = request.PhoneNumber,
             Email = request.Email,
             Password = HashPassword(request.Password),
-            Role = "User"
+            Role = "User",
+            AuthProvider = "Local",
+            EmailVerified = false
         };
 
         await unitOfWork.Users.AddAsync(newUser);
@@ -81,7 +90,6 @@ public class AuthService(
             return null;
         }
 
-        // Mark old token as used
         storedToken.IsUsed = true;
         unitOfWork.RefreshTokens.Update(storedToken);
         await unitOfWork.CompleteAsync();
@@ -89,7 +97,6 @@ public class AuthService(
         logger.LogInformation("Successful token refresh for user: {Email}",
             storedToken.User.Email);
 
-        // Generate new token and response
         return await GenerateAuthenticationResponseAsync(storedToken.User);
     }
 
@@ -138,7 +145,6 @@ public class AuthService(
         var token = jwtService.GenerateJwtToken(user);
         var refreshToken = jwtService.GenerateRefreshToken(user);
 
-        // Save refresh token to database through Unit of Work
         await unitOfWork.RefreshTokens.AddAsync(refreshToken);
         await unitOfWork.CompleteAsync();
 
@@ -150,7 +156,9 @@ public class AuthService(
             Role = user.Role,
             Token = token,
             RefreshToken = refreshToken.Token,
-            Expiration = jwtService.GetTokenExpirationTime(token)
+            Expiration = jwtService.GetTokenExpirationTime(token),
+            AuthProvider = user.AuthProvider,
+            EmailVerified = user.EmailVerified
         };
     }
 

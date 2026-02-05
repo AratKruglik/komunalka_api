@@ -2,6 +2,7 @@ using KomunalkaAPI.DTO.Auth;
 using KomunalkaAPI.Services.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace KomunalkaAPI.Controllers;
 
@@ -11,10 +12,12 @@ namespace KomunalkaAPI.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IOAuthService _oauthService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IOAuthService oauthService)
     {
         _authService = authService;
+        _oauthService = oauthService;
     }
 
     [HttpPost("register")]
@@ -91,5 +94,114 @@ public class AuthController : ControllerBase
     public IActionResult ValidateToken()
     {
         return Ok(new { Message = "Token is valid" });
+    }
+
+    [HttpPost("oauth/login")]
+    public async Task<IActionResult> OAuthLogin([FromBody] OAuthLoginRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var result = await _oauthService.AuthenticateWithProviderAsync(
+            request.Provider,
+            request.Token);
+
+        if (result == null)
+        {
+            return BadRequest(new { Message = "OAuth authentication failed" });
+        }
+
+        return Ok(result);
+    }
+
+    [HttpGet("oauth/{provider}/authorize")]
+    public IActionResult GetAuthorizationUrl(string provider, [FromQuery] string? redirectUri = null)
+    {
+        try
+        {
+            var url = _oauthService.GetAuthorizationUrl(provider, redirectUri);
+            return Ok(new { AuthorizationUrl = url });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { Message = ex.Message });
+        }
+    }
+
+    [HttpPost("oauth/callback")]
+    public async Task<IActionResult> OAuthCallback([FromBody] OAuthCallbackRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        if (!string.IsNullOrEmpty(request.Error))
+        {
+            return BadRequest(new
+            {
+                Error = request.Error,
+                Description = request.ErrorDescription
+            });
+        }
+
+        var result = await _oauthService.HandleCallbackAsync(request);
+
+        if (result == null)
+        {
+            return BadRequest(new { Message = "OAuth callback processing failed" });
+        }
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPost("oauth/link")]
+    public async Task<IActionResult> LinkOAuthProvider([FromBody] OAuthLoginRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _oauthService.LinkProviderAsync(
+            userId,
+            request.Provider,
+            request.Token);
+
+        if (!result)
+        {
+            return BadRequest(new { Message = "Failed to link OAuth provider" });
+        }
+
+        return Ok(new { Message = "OAuth provider linked successfully" });
+    }
+
+    [Authorize]
+    [HttpDelete("oauth/unlink/{provider}")]
+    public async Task<IActionResult> UnlinkOAuthProvider(string provider)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _oauthService.UnlinkProviderAsync(userId, provider);
+
+        if (!result)
+        {
+            return BadRequest(new { Message = "Failed to unlink OAuth provider" });
+        }
+
+        return Ok(new { Message = "OAuth provider unlinked successfully" });
     }
 }

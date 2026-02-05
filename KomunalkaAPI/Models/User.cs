@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace KomunalkaAPI.Models;
 
 [Index(nameof(Email), IsUnique = true)]
+[Index(nameof(AuthProvider), nameof(ExternalId), IsUnique = true, Name = "IX_User_Provider_ExternalId")]
 public class User
 {
     [Key]
@@ -23,9 +24,8 @@ public class User
     [StringLength(20, ErrorMessage = "Phone number is too long")]
     public string? PhoneNumber { get; set; }
 
-    [Required(ErrorMessage = "Password is required")]
     [StringLength(500, ErrorMessage = "Password is too long")]
-    public required string Password { get; set; }
+    public string? Password { get; set; } // Nullable for OAuth users
 
     [Required(ErrorMessage = "Email is required")]
     [EmailAddress(ErrorMessage = "Invalid email format")]
@@ -36,6 +36,17 @@ public class User
 
     [StringLength(50, ErrorMessage = "Role is too long")]
     public string? Role { get; set; } = "User";
+
+    // OAuth fields
+    [StringLength(50, ErrorMessage = "Auth provider is too long")]
+    public string? AuthProvider { get; set; } = "Local"; // "Local", "Google", "Apple", "GitHub"
+
+    [StringLength(500, ErrorMessage = "External ID is too long")]
+    public string? ExternalId { get; set; } // ID from OAuth provider
+
+    public bool EmailVerified { get; set; } = false; // OAuth emails are auto-verified
+
+    public DateTime? LastLoginAt { get; set; }
 
     [StringLength(500, ErrorMessage = "Avatar path is too long")]
     public string? AvatarOptimizedPath { get; set; }

@@ -9,4 +9,6 @@ public class AuthenticationResponse
     public string? Username { get; set; }
     public string? Email { get; set; }
     public string? Role { get; set; }
+    public string? AuthProvider { get; set; }
+    public bool EmailVerified { get; set; }
 }

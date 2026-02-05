@@ -215,6 +215,11 @@ From `docs/CONTRIBUTING.md`:
 
 - **Naming**: camelCase for local variables, PascalCase for classes/methods/properties
 - **Async**: Always use async methods for database operations
+- **Comments**: Code should be self-descriptive. Avoid comments that explain "what" the code does — use meaningful names instead. Comments are acceptable only for:
+  - Non-obvious "why" decisions (business logic reasoning, workarounds)
+  - Public API documentation (XML docs for libraries/SDKs)
+  - Complex algorithms that can't be simplified
+  - TODO/FIXME markers for technical debt
 - **Commit messages**: Format as `type: message` where type is `feat`, `fix`, `docs`, `style`, `refactor`, `test`, or `chore`
 
 Example:

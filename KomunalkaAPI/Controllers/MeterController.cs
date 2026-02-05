@@ -85,17 +85,14 @@ public class MeterController : ControllerBase
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ApiResponse<MeterDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create(
-        [FromForm] CreateMeterDto dto,
-        [FromForm] IFormFile? photo = null)
+    public async Task<IActionResult> Create([FromForm] CreateMeterDto dto)
     {
         try
         {
-            // Save photo if provided
             string? photoPath = null;
-            if (photo != null)
+            if (dto.Photo != null)
             {
-                photoPath = await SavePhotoAsync(photo);
+                photoPath = await SavePhotoAsync(dto.Photo);
             }
 
             var meter = new Models.Meter

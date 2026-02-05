@@ -43,13 +43,10 @@ public class MeterReadingController : ControllerBase
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ApiResponse<ServiceCounterValueDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateMeterReading(
-        [FromForm] CreateServiceCounterValueDto dto,
-        [FromForm] [FileValidation] IFormFile? image = null)
+    public async Task<IActionResult> CreateMeterReading([FromForm] CreateServiceCounterValueDto dto)
     {
         try
         {
-            // Create meter reading
             var reading = new ServiceCounterValue
             {
                 ServiceCounterId = dto.ServiceCounterId,
@@ -63,18 +60,16 @@ public class MeterReadingController : ControllerBase
 
             var readingId = entry.Entity.Id;
 
-            // If image provided, save temp file and queue for processing
-            if (image != null)
+            if (dto.Image != null)
             {
-                var tempPath = await SaveTempFileAsync(image);
+                var tempPath = await SaveTempFileAsync(dto.Image);
 
-                // Create image record
                 var imageRecord = new MeterReadingImage
                 {
                     ServiceCounterValueId = readingId,
                     OptimizedPath = string.Empty,
                     ThumbnailPath = string.Empty,
-                    MimeType = image.ContentType,
+                    MimeType = dto.Image.ContentType,
                     IsProcessed = false,
                     ServiceCounterValue = reading
                 };
@@ -82,7 +77,6 @@ public class MeterReadingController : ControllerBase
                 var imageEntry = await _unitOfWork.MeterReadingImages.AddAsync(imageRecord);
                 await _unitOfWork.CompleteAsync();
 
-                // Queue for background processing
                 await _imageProcessing.QueueImageProcessingAsync(imageEntry.Entity.Id, tempPath);
 
                 _logger.LogInformation(
