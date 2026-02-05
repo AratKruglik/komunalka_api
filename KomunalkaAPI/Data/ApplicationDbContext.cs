@@ -62,6 +62,24 @@ namespace KomunalkaAPI.Data
                 .HasIndex(ua => ua.UserId)
                 .IsUnique()
                 .HasFilter("is_primary = true");
+
+            modelBuilder.Entity<Models.ServiceProvider>()
+                .HasOne(sp => sp.Address)
+                .WithMany(a => a.ServiceProviders)
+                .HasForeignKey(sp => sp.AddressId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Models.ServiceProvider>()
+                .HasOne(sp => sp.UtilityType)
+                .WithMany(ut => ut.ServiceProviders)
+                .HasForeignKey(sp => sp.UtilityTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Meter>()
+                .HasOne(m => m.ServiceProvider)
+                .WithMany(sp => sp.Meters)
+                .HasForeignKey(m => m.ServiceProviderId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

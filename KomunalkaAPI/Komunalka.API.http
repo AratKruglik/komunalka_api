@@ -2027,6 +2027,214 @@ GET {{KomunalkaAPI_HostAddress}}/meter-readings/photos/1/thumbnail
 # }
 
 ### ============================================================================
+### Utility Type (Тип комунальної послуги) Endpoints
+### ============================================================================
+
+###
+# Get all active utility types (no auth required)
+GET {{KomunalkaAPI_HostAddress}}/utility-types
+Accept: application/json
+
+# Response 200 OK:
+# {
+#   "data": [
+#     {
+#       "id": 1,
+#       "slug": "electricity",
+#       "displayName": "Електроенергія",
+#       "unit": "kWh",
+#       "isActive": true
+#     },
+#     {
+#       "id": 2,
+#       "slug": "gas",
+#       "displayName": "Газопостачання",
+#       "unit": "m³",
+#       "isActive": true
+#     }
+#   ]
+# }
+
+###
+# Get utility type by ID (no auth required)
+GET {{KomunalkaAPI_HostAddress}}/utility-types/1
+Accept: application/json
+
+# Response 200 OK:
+# {
+#   "data": {
+#     "id": 1,
+#     "slug": "electricity",
+#     "displayName": "Електроенергія",
+#     "unit": "kWh",
+#     "isActive": true
+#   }
+# }
+#
+# Response 404 Not Found:
+# { "error": "Utility type not found" }
+
+### ============================================================================
+### Service Provider (Постачальник послуг) Management Endpoints
+### ============================================================================
+
+###
+# Get all service providers for the current user's addresses
+GET {{KomunalkaAPI_HostAddress}}/service-providers
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+# Response 200 OK:
+# {
+#   "data": [
+#     {
+#       "id": 1,
+#       "addressId": 1,
+#       "name": "Київенерго",
+#       "description": "Постачальник електроенергії",
+#       "phone": "+380441234567",
+#       "email": "info@kyivenergo.ua",
+#       "website": "https://kyivenergo.ua",
+#       "isActive": true,
+#       "createdAt": "2024-01-01T00:00:00Z",
+#       "updatedAt": "2024-01-01T00:00:00Z",
+#       "tariffs": [
+#         {
+#           "id": 1,
+#           "serviceProviderId": 1,
+#           "utilityTypeId": 1,
+#           "currencyId": 1,
+#           "pricingModel": "fixed",
+#           "baseRate": 2.64,
+#           "serviceFee": 0,
+#           "effectiveFrom": "2024-01-01T00:00:00Z",
+#           "effectiveTo": null,
+#           "notes": null,
+#           "createdAt": "2024-01-01T00:00:00Z",
+#           "updatedAt": "2024-01-01T00:00:00Z",
+#           "utilityTypeName": "Електроенергія",
+#           "currencyCode": "UAH",
+#           "currencySymbol": "₴"
+#         }
+#       ]
+#     }
+#   ]
+# }
+
+###
+# Get service provider by ID
+GET {{KomunalkaAPI_HostAddress}}/service-providers/1
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+# Response 200 OK:
+# {
+#   "data": {
+#     "id": 1,
+#     "addressId": 1,
+#     "name": "Київенерго",
+#     "description": "Постачальник електроенергії",
+#     "isActive": true,
+#     "tariffs": [...]
+#   }
+# }
+#
+# Response 404 Not Found:
+# { "error": "Service provider not found" }
+
+###
+# Get service providers by address ID
+GET {{KomunalkaAPI_HostAddress}}/service-providers/address/1
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+# Response 200 OK:
+# {
+#   "data": [
+#     {
+#       "id": 1,
+#       "addressId": 1,
+#       "name": "Київенерго",
+#       "tariffs": [...]
+#     }
+#   ]
+# }
+
+###
+# Create a new service provider with tariffs
+POST {{KomunalkaAPI_HostAddress}}/service-providers
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "addressId": 1,
+  "utilityTypeId": 3,
+  "name": "Київводоканал",
+  "description": "Постачальник водопостачання",
+  "phone": "+380441112233",
+  "email": "info@vodokanal.kyiv.ua",
+  "website": "https://vodokanal.kyiv.ua",
+  "isActive": true,
+  "tariffs": [
+    {
+      "utilityTypeId": 2,
+      "currencyId": 1,
+      "pricingModel": "fixed",
+      "baseRate": 35.40,
+      "serviceFee": 0,
+      "effectiveFrom": "2024-06-01T00:00:00Z",
+      "effectiveTo": null,
+      "notes": "Холодна вода"
+    }
+  ]
+}
+
+# Response 201 Created:
+# {
+#   "data": {
+#     "id": 2,
+#     "addressId": 1,
+#     "name": "Київводоканал",
+#     "description": "Постачальник водопостачання",
+#     "isActive": true,
+#     "tariffs": [...]
+#   }
+# }
+
+###
+# Update a service provider (partial update)
+PUT {{KomunalkaAPI_HostAddress}}/service-providers/1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "name": "Київенерго (оновлено)",
+  "phone": "+380449876543",
+  "utilityTypeId": 1
+}
+
+# Response 200 OK:
+# {
+#   "data": {
+#     "id": 1,
+#     "addressId": 1,
+#     "name": "Київенерго (оновлено)",
+#     "phone": "+380449876543",
+#     "tariffs": [...]
+#   }
+# }
+
+###
+# Delete a service provider
+DELETE {{KomunalkaAPI_HostAddress}}/service-providers/1
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+# Response 204 No Content
+
+### ============================================================================
 ### Currency Management Endpoints
 ### ============================================================================
 

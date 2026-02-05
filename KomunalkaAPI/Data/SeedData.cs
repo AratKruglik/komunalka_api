@@ -55,6 +55,21 @@ public static class SeedData
             await context.AddressTypes.AddRangeAsync(addressTypes);
         }
 
+        if (!context.UtilityTypes.Any())
+        {
+            var utilityTypes = new List<UtilityType>
+            {
+                new() { Slug = "electricity", DisplayName = "Електроенергія", Unit = "kWh" },
+                new() { Slug = "gas", DisplayName = "Газопостачання", Unit = "m³" },
+                new() { Slug = "cold-water", DisplayName = "Холодна вода", Unit = "m³" },
+                new() { Slug = "hot-water", DisplayName = "Гаряча вода", Unit = "m³" },
+                new() { Slug = "heating", DisplayName = "Теплопостачання", Unit = "Gcal" },
+                new() { Slug = "sewage", DisplayName = "Водовідведення", Unit = "m³" }
+            };
+
+            await context.UtilityTypes.AddRangeAsync(utilityTypes);
+        }
+
         await context.SaveChangesAsync();
     }
 }

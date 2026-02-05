@@ -3,6 +3,7 @@ using System;
 using KomunalkaAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace KomunalkaAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260205150220_AddAddressIdToServiceProvider")]
+    partial class AddAddressIdToServiceProvider
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -760,10 +763,6 @@ namespace KomunalkaAPI.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
-                    b.Property<int>("UtilityTypeId")
-                        .HasColumnType("integer")
-                        .HasColumnName("utility_type_id");
-
                     b.Property<string>("Website")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
@@ -774,9 +773,6 @@ namespace KomunalkaAPI.Migrations
 
                     b.HasIndex("AddressId")
                         .HasDatabaseName("ix_service_providers_address_id");
-
-                    b.HasIndex("UtilityTypeId")
-                        .HasDatabaseName("ix_service_providers_utility_type_id");
 
                     b.ToTable("service_providers");
                 });
@@ -1231,16 +1227,7 @@ namespace KomunalkaAPI.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_service_providers_addresses_address_id");
 
-                    b.HasOne("KomunalkaAPI.Models.UtilityType", "UtilityType")
-                        .WithMany("ServiceProviders")
-                        .HasForeignKey("UtilityTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_service_providers_utility_types_utility_type_id");
-
                     b.Navigation("Address");
-
-                    b.Navigation("UtilityType");
                 });
 
             modelBuilder.Entity("KomunalkaAPI.Models.Tariff", b =>
@@ -1352,8 +1339,6 @@ namespace KomunalkaAPI.Migrations
             modelBuilder.Entity("KomunalkaAPI.Models.UtilityType", b =>
                 {
                     b.Navigation("Meters");
-
-                    b.Navigation("ServiceProviders");
 
                     b.Navigation("Tariffs");
                 });

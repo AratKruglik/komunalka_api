@@ -46,4 +46,5 @@ public class Address
     public required AddressType AddressType { get; set; }
     public List<ServiceCounter>? ServiceCounters { get; set; }
     public List<AddressesServiceCategory>? AddressesServiceCategories { get; set; }
+    public List<Models.ServiceProvider>? ServiceProviders { get; set; }
 }
