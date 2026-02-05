@@ -2,6 +2,7 @@ using KomunalkaAPI.DTO.Auth;
 using KomunalkaAPI.Models;
 using KomunalkaAPI.Repositories;
 using KomunalkaAPI.Services.Auth.Providers;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace KomunalkaAPI.Services.Auth;
 
@@ -11,18 +12,25 @@ public class OAuthService : IOAuthService
     private readonly IJwtService _jwtService;
     private readonly IEnumerable<IOAuthProvider> _oauthProviders;
     private readonly ILogger<OAuthService> _logger;
+    private readonly IMemoryCache _stateCache;
+
+    private static readonly TimeSpan StateExpiration = TimeSpan.FromMinutes(5);
 
     public OAuthService(
         IUnitOfWork unitOfWork,
         IJwtService jwtService,
         IEnumerable<IOAuthProvider> oauthProviders,
-        ILogger<OAuthService> logger)
+        ILogger<OAuthService> logger,
+        IMemoryCache stateCache)
     {
         _unitOfWork = unitOfWork;
         _jwtService = jwtService;
         _oauthProviders = oauthProviders;
         _logger = logger;
+        _stateCache = stateCache;
     }
+
+    private record OAuthStateData(string Provider, string? RedirectUri, DateTime CreatedAt);
 
     public async Task<AuthenticationResponse?> AuthenticateWithProviderAsync(
         string providerName,
@@ -90,6 +98,29 @@ public class OAuthService : IOAuthService
             return null;
         }
 
+        if (string.IsNullOrEmpty(request.State))
+        {
+            _logger.LogWarning("OAuth callback missing state parameter");
+            return null;
+        }
+
+        if (!_stateCache.TryGetValue(request.State, out OAuthStateData? stateData) || stateData == null)
+        {
+            _logger.LogWarning("Invalid or expired OAuth state");
+            return null;
+        }
+
+        _stateCache.Remove(request.State);
+
+        if (!stateData.Provider.Equals(request.Provider, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning(
+                "OAuth state provider mismatch. Expected: {Expected}, Actual: {Actual}",
+                stateData.Provider,
+                request.Provider);
+            return null;
+        }
+
         var provider = GetProvider(request.Provider);
         if (provider == null)
         {
@@ -126,7 +157,7 @@ public class OAuthService : IOAuthService
             throw new ArgumentException($"OAuth provider not found: {providerName}");
         }
 
-        var state = GenerateState();
+        var state = GenerateState(providerName, redirectUri);
 
         return provider.GetAuthorizationUrl(state, redirectUri);
     }
@@ -355,9 +386,14 @@ public class OAuthService : IOAuthService
             p => p.ProviderName.Equals(providerName, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string GenerateState()
+    private string GenerateState(string providerName, string? redirectUri = null)
     {
-        return Convert.ToBase64String(
+        var state = Convert.ToBase64String(
             System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+
+        var stateData = new OAuthStateData(providerName, redirectUri, DateTime.UtcNow);
+        _stateCache.Set(state, stateData, StateExpiration);
+
+        return state;
     }
 }
