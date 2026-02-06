@@ -12,7 +12,6 @@ using KomunalkaAPI.Repositories.UserAddress;
 using KomunalkaAPI.Repositories.Meter;
 using KomunalkaAPI.Repositories.ServiceProvider;
 using KomunalkaAPI.Repositories.MeterReading;
-using KomunalkaAPI.Repositories.Tariff;
 using KomunalkaAPI.Repositories.UtilityType;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,7 +34,6 @@ public interface IUnitOfWork : IDisposable
     IServiceProviderRepository ServiceProviders { get; }
     IMeterReadingRepository MeterReadings { get; }
     IUtilityTypeRepository UtilityTypes { get; }
-    ITariffRepository Tariffs { get; }
     Task<int> CompleteAsync();
     DbContext GetContext();
 }
