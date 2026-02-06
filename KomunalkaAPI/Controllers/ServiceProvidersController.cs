@@ -118,6 +118,7 @@ public class ServiceProvidersController : ControllerBase
             var context = _unitOfWork.GetContext();
             await context.Set<TariffModel>().AddRangeAsync(tariffs);
             await _unitOfWork.CompleteAsync();
+        }
 
         var createdProvider = await LoadProviderWithTariffs(serviceProvider.Id);
 
