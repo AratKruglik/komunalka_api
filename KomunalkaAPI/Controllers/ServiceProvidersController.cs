@@ -94,9 +94,10 @@ public class ServiceProvidersController : ControllerBase
         await _unitOfWork.ServiceProviders.AddAsync(serviceProvider);
         await _unitOfWork.CompleteAsync();
 
+        var tariffs = new List<TariffModel>();
         foreach (var tariffDto in dto.Tariffs)
         {
-            var tariff = new TariffModel
+            tariffs.Add(new TariffModel
             {
                 ServiceProviderId = serviceProvider.Id,
                 UtilityTypeId = tariffDto.UtilityTypeId ?? dto.UtilityTypeId,
@@ -109,11 +110,13 @@ public class ServiceProvidersController : ControllerBase
                 Notes = tariffDto.Notes,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
-            };
-            await _unitOfWork.Tariffs.AddAsync(tariff);
+            });
         }
 
-        if (dto.Tariffs.Any())
+        if (tariffs.Count > 0)
+        {
+            var context = _unitOfWork.GetContext();
+            await context.Set<TariffModel>().AddRangeAsync(tariffs);
             await _unitOfWork.CompleteAsync();
 
         var createdProvider = await LoadProviderWithTariffs(serviceProvider.Id);
@@ -171,120 +174,6 @@ public class ServiceProvidersController : ControllerBase
         return NoContent();
     }
 
-    [HttpGet("{id}/tariffs")]
-    public async Task<IActionResult> GetTariffs(int id)
-    {
-        if (!TryGetUserId(out var userId))
-            return Unauthorized(new { error = "Invalid user credentials" });
-
-        var provider = await _unitOfWork.ServiceProviders.GetByIdAsync(id);
-        if (provider == null)
-            return NotFound(new { error = "Service provider not found" });
-
-        if (!await _unitOfWork.UserAddresses.UserHasAccessToAddressAsync(userId, provider.AddressId))
-            return Forbid();
-
-        var tariffs = await _unitOfWork.Tariffs.GetByServiceProviderIdAsync(id);
-        var response = tariffs.Select(MapToTariffDto);
-
-        return Ok(new ApiResponse<IEnumerable<TariffDto>> { Data = response });
-    }
-
-    [HttpPost("{id}/tariffs")]
-    public async Task<IActionResult> CreateTariff(int id, [FromBody] CreateTariffDto dto)
-    {
-        if (!TryGetUserId(out var userId))
-            return Unauthorized(new { error = "Invalid user credentials" });
-
-        var provider = await _unitOfWork.ServiceProviders.GetByIdAsync(id);
-        if (provider == null)
-            return NotFound(new { error = "Service provider not found" });
-
-        if (!await _unitOfWork.UserAddresses.UserHasAccessToAddressAsync(userId, provider.AddressId))
-            return Forbid();
-
-        var tariff = new TariffModel
-        {
-            ServiceProviderId = id,
-            UtilityTypeId = dto.UtilityTypeId ?? provider.UtilityTypeId,
-            CurrencyId = dto.CurrencyId ?? 1,
-            PricingModel = dto.PricingModel,
-            BaseRate = dto.BaseRate,
-            ServiceFee = dto.ServiceFee,
-            EffectiveFrom = dto.EffectiveFrom ?? DateTime.UtcNow,
-            EffectiveTo = dto.EffectiveTo,
-            Notes = dto.Notes,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _unitOfWork.Tariffs.AddAsync(tariff);
-        await _unitOfWork.CompleteAsync();
-
-        var created = await _unitOfWork.Tariffs.GetByIdWithDetailsAsync(tariff.Id);
-
-        return CreatedAtAction(nameof(GetTariffs), new { id },
-            new ApiResponse<TariffDto> { Data = MapToTariffDto(created!) });
-    }
-
-    [HttpPut("{id}/tariffs/{tariffId}")]
-    public async Task<IActionResult> UpdateTariff(int id, int tariffId, [FromBody] UpdateTariffDto dto)
-    {
-        if (!TryGetUserId(out var userId))
-            return Unauthorized(new { error = "Invalid user credentials" });
-
-        var provider = await _unitOfWork.ServiceProviders.GetByIdAsync(id);
-        if (provider == null)
-            return NotFound(new { error = "Service provider not found" });
-
-        if (!await _unitOfWork.UserAddresses.UserHasAccessToAddressAsync(userId, provider.AddressId))
-            return Forbid();
-
-        var tariff = await _unitOfWork.Tariffs.GetByIdWithDetailsAsync(tariffId);
-        if (tariff == null || tariff.ServiceProviderId != id)
-            return NotFound(new { error = "Tariff not found for this provider" });
-
-        if (dto.UtilityTypeId.HasValue) tariff.UtilityTypeId = dto.UtilityTypeId.Value;
-        if (dto.CurrencyId.HasValue) tariff.CurrencyId = dto.CurrencyId.Value;
-        if (dto.PricingModel != null) tariff.PricingModel = dto.PricingModel;
-        if (dto.BaseRate.HasValue) tariff.BaseRate = dto.BaseRate.Value;
-        if (dto.ServiceFee.HasValue) tariff.ServiceFee = dto.ServiceFee.Value;
-        if (dto.EffectiveFrom.HasValue) tariff.EffectiveFrom = dto.EffectiveFrom.Value;
-        if (dto.EffectiveTo.HasValue) tariff.EffectiveTo = dto.EffectiveTo.Value;
-        if (dto.Notes != null) tariff.Notes = dto.Notes;
-        tariff.UpdatedAt = DateTime.UtcNow;
-
-        _unitOfWork.Tariffs.Update(tariff);
-        await _unitOfWork.CompleteAsync();
-
-        var updated = await _unitOfWork.Tariffs.GetByIdWithDetailsAsync(tariffId);
-
-        return Ok(new ApiResponse<TariffDto> { Data = MapToTariffDto(updated!) });
-    }
-
-    [HttpDelete("{id}/tariffs/{tariffId}")]
-    public async Task<IActionResult> DeleteTariff(int id, int tariffId)
-    {
-        if (!TryGetUserId(out var userId))
-            return Unauthorized(new { error = "Invalid user credentials" });
-
-        var provider = await _unitOfWork.ServiceProviders.GetByIdAsync(id);
-        if (provider == null)
-            return NotFound(new { error = "Service provider not found" });
-
-        if (!await _unitOfWork.UserAddresses.UserHasAccessToAddressAsync(userId, provider.AddressId))
-            return Forbid();
-
-        var tariff = await _unitOfWork.Tariffs.GetByIdAsync(tariffId);
-        if (tariff == null || tariff.ServiceProviderId != id)
-            return NotFound(new { error = "Tariff not found for this provider" });
-
-        _unitOfWork.Tariffs.Delete(tariff);
-        await _unitOfWork.CompleteAsync();
-
-        return NoContent();
-    }
-
     private bool TryGetUserId(out int userId)
     {
         userId = 0;
@@ -304,28 +193,6 @@ public class ServiceProvidersController : ControllerBase
             .FirstOrDefaultAsync(sp => sp.Id == id);
     }
 
-    private static TariffDto MapToTariffDto(TariffModel t)
-    {
-        return new TariffDto
-        {
-            Id = t.Id,
-            ServiceProviderId = t.ServiceProviderId,
-            UtilityTypeId = t.UtilityTypeId,
-            CurrencyId = t.CurrencyId,
-            PricingModel = t.PricingModel,
-            BaseRate = t.BaseRate,
-            ServiceFee = t.ServiceFee,
-            EffectiveFrom = t.EffectiveFrom,
-            EffectiveTo = t.EffectiveTo,
-            Notes = t.Notes,
-            CreatedAt = t.CreatedAt,
-            UpdatedAt = t.UpdatedAt,
-            UtilityTypeName = t.UtilityType?.DisplayName,
-            CurrencyCode = t.Currency?.Code,
-            CurrencySymbol = t.Currency?.Symbol
-        };
-    }
-
     private static ServiceProviderWithTariffsDto MapToDto(ServiceProviderModel sp)
     {
         return new ServiceProviderWithTariffsDto
@@ -342,7 +209,24 @@ public class ServiceProvidersController : ControllerBase
             IsActive = sp.IsActive,
             CreatedAt = sp.CreatedAt,
             UpdatedAt = sp.UpdatedAt,
-            Tariffs = sp.Tariffs.Select(MapToTariffDto).ToList()
+            Tariffs = sp.Tariffs.Select(t => new TariffDto
+            {
+                Id = t.Id,
+                ServiceProviderId = t.ServiceProviderId,
+                UtilityTypeId = t.UtilityTypeId,
+                CurrencyId = t.CurrencyId,
+                PricingModel = t.PricingModel,
+                BaseRate = t.BaseRate,
+                ServiceFee = t.ServiceFee,
+                EffectiveFrom = t.EffectiveFrom,
+                EffectiveTo = t.EffectiveTo,
+                Notes = t.Notes,
+                CreatedAt = t.CreatedAt,
+                UpdatedAt = t.UpdatedAt,
+                UtilityTypeName = t.UtilityType?.DisplayName,
+                CurrencyCode = t.Currency?.Code,
+                CurrencySymbol = t.Currency?.Symbol
+            }).ToList()
         };
     }
 }

@@ -80,12 +80,6 @@ namespace KomunalkaAPI.Data
                 .WithMany(sp => sp.Meters)
                 .HasForeignKey(m => m.ServiceProviderId)
                 .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<MeterReading>()
-                .HasOne(mr => mr.Tariff)
-                .WithMany()
-                .HasForeignKey(mr => mr.TariffId)
-                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }
