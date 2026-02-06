@@ -1335,58 +1335,26 @@ Authorization: Bearer {{jwt_token}}
 # ]
 
 ###
-# Create new meter without photo (requires authentication)
+# Create new meter (requires authentication)
 # utilityTypeId: 1 = Електроенергія, 2 = Газ, 3 = Холодна вода, 4 = Гаряча вода, 5 = Опалення
 # serviceProviderId: REQUIRED - ID of the service provider (must match utility type)
 POST {{KomunalkaAPI_HostAddress}}/meter
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Type: application/json
 Authorization: Bearer {{jwt_token}}
 
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="AddressId"
-
-1
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="UtilityTypeId"
-
-1
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="Name"
-
-Лічильник електроенергії
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="SerialNumber"
-
-AB12345678
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="ModelName"
-
-НІК 2102
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="Location"
-
-На кухні біля дверей
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="InstallationDate"
-
-2024-01-15
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="InitialReading"
-
-1500.50
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="ServiceProviderId"
-
-1
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="Notes"
-
-Перевірено та опломбовано
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="IsActive"
-
-true
-------WebKitFormBoundary7MA4YWxkTrZu0gW--
+{
+  "addressId": 1,
+  "utilityTypeId": 1,
+  "name": "Лічильник електроенергії",
+  "serialNumber": "AB12345678",
+  "modelName": "НІК 2102",
+  "location": "На кухні біля дверей",
+  "installationDate": "2024-01-15",
+  "initialReading": 1500.50,
+  "serviceProviderId": 1,
+  "notes": "Перевірено та опломбовано",
+  "isActive": true
+}
 
 # Response 201 Created:
 # {
@@ -1436,57 +1404,12 @@ true
 # }
 
 ###
-# Create new meter with photo (requires authentication)
+# Upload photo for meter (requires authentication)
 # Note: Replace "./path/to/meter-photo.jpg" with actual image path
-# serviceProviderId: REQUIRED - ID of the service provider (must match utility type)
-POST {{KomunalkaAPI_HostAddress}}/meter
+POST {{KomunalkaAPI_HostAddress}}/meter/1/photo
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 Authorization: Bearer {{jwt_token}}
 
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="AddressId"
-
-1
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="UtilityTypeId"
-
-2
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="Name"
-
-Лічильник газу
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="SerialNumber"
-
-GZ98765432
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="ModelName"
-
-Metrix G4
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="Location"
-
-У коридорі на стіні
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="InstallationDate"
-
-2024-02-20
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="InitialReading"
-
-250.0
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="ServiceProviderId"
-
-1
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="Notes"
-
-Встановлено та опломбовано газовою службою
-------WebKitFormBoundary7MA4YWxkTrZu0gW
-Content-Disposition: form-data; name="IsActive"
-
-true
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
 Content-Disposition: form-data; name="photo"; filename="meter-photo.jpg"
 Content-Type: image/jpeg
@@ -1494,26 +1417,38 @@ Content-Type: image/jpeg
 < ./path/to/meter-photo.jpg
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
-# Response 201 Created:
+# Response 200 OK:
 # {
-#   "id": 2,
-#   "addressId": 1,
-#   "utilityTypeId": 2,
-#   "serialNumber": "GZ98765432",
-#   "name": "Лічильник газу",
-#   "description": null,
-#   "modelName": "Metrix G4",
-#   "location": "У коридорі на стіні",
-#   "photoPath": "uploads/meters/meter_2_photo.jpg",
-#   "installationDate": "2024-02-20T00:00:00Z",
-#   "initialReading": 250.0,
-#   "serviceProviderId": 1,
-#   "notes": "Встановлено та опломбовано газовою службою",
-#   "isActive": true,
-#   "createdAt": "2025-02-05T10:05:00Z",
-#   "updatedAt": "2025-02-05T10:05:00Z",
-#   "utilityTypeName": "Газ",
-#   "serviceProviderName": "Київгаз"
+#   "data": {
+#     "id": 1,
+#     "addressId": 1,
+#     "utilityTypeId": 1,
+#     "serialNumber": "AB12345678",
+#     "name": "Лічильник електроенергії",
+#     "description": null,
+#     "modelName": "НІК 2102",
+#     "location": "На кухні біля дверей",
+#     "photoPath": "uploads/meters/abc123-def456.jpg",
+#     "installationDate": "2024-01-15T00:00:00Z",
+#     "initialReading": 1500.50,
+#     "serviceProviderId": 1,
+#     "notes": "Перевірено та опломбовано",
+#     "isActive": true,
+#     "createdAt": "2025-02-05T10:00:00Z",
+#     "updatedAt": "2025-02-05T10:15:00Z",
+#     "utilityTypeName": "Електроенергія",
+#     "serviceProviderName": "Київенерго"
+#   }
+# }
+#
+# Response 404 Not Found:
+# {
+#   "error": "Meter not found"
+# }
+#
+# Response 400 Bad Request:
+# {
+#   "error": "Photo file is required"
 # }
 
 ###

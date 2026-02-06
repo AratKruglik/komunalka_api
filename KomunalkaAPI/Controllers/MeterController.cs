@@ -79,13 +79,13 @@ public class MeterController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new meter with optional photo
+    /// Create a new meter
     /// </summary>
     [HttpPost]
-    [Consumes("multipart/form-data")]
+    [Consumes("application/json")]
     [ProducesResponseType(typeof(ApiResponse<MeterDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromForm] CreateMeterDto dto)
+    public async Task<IActionResult> Create([FromBody] CreateMeterJsonDto dto)
     {
         try
         {
@@ -101,12 +101,6 @@ public class MeterController : ControllerBase
             if (serviceProvider.UtilityTypeId != dto.UtilityTypeId)
                 return BadRequest(new { error = "Service provider utility type does not match meter utility type" });
 
-            string? photoPath = null;
-            if (dto.Photo != null)
-            {
-                photoPath = await SavePhotoAsync(dto.Photo);
-            }
-
             var meter = new Models.Meter
             {
                 AddressId = dto.AddressId,
@@ -116,7 +110,7 @@ public class MeterController : ControllerBase
                 Description = dto.Description,
                 ModelName = dto.ModelName,
                 Location = dto.Location,
-                PhotoPath = photoPath,
+                PhotoPath = null,
                 InstallationDate = dto.InstallationDate,
                 InitialReading = dto.InitialReading,
                 ServiceProviderId = dto.ServiceProviderId,
@@ -138,6 +132,50 @@ public class MeterController : ControllerBase
         {
             _logger.LogError(ex, "Error creating meter");
             return BadRequest(new { error = "Failed to create meter", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Upload photo for a meter
+    /// </summary>
+    [HttpPost("{id}/photo")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(ApiResponse<MeterDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UploadPhoto(int id, [FromForm] IFormFile photo)
+    {
+        try
+        {
+            var meter = await _unitOfWork.Meters.GetByIdAsync(id);
+            if (meter == null)
+                return NotFound(new { error = "Meter not found" });
+
+            if (photo == null || photo.Length == 0)
+                return BadRequest(new { error = "Photo file is required" });
+
+            // Delete old photo if exists
+            if (!string.IsNullOrEmpty(meter.PhotoPath))
+            {
+                DeletePhoto(meter.PhotoPath);
+            }
+
+            // Save new photo
+            var photoPath = await SavePhotoAsync(photo);
+            meter.PhotoPath = photoPath;
+            meter.UpdatedAt = DateTime.UtcNow;
+
+            _unitOfWork.Meters.Update(meter);
+            await _unitOfWork.CompleteAsync();
+
+            var updatedMeter = await _unitOfWork.Meters.GetByIdAsync(id);
+
+            return Ok(new ApiResponse<MeterDto> { Data = MapToDto(updatedMeter!) });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading meter photo");
+            return BadRequest(new { error = "Failed to upload photo", details = ex.Message });
         }
     }
 
