@@ -111,7 +111,9 @@ public class MeterController : ControllerBase
                 ModelName = dto.ModelName,
                 Location = dto.Location,
                 PhotoPath = null,
-                InstallationDate = dto.InstallationDate,
+                InstallationDate = dto.InstallationDate.HasValue
+                    ? DateTime.SpecifyKind(dto.InstallationDate.Value, DateTimeKind.Utc)
+                    : null,
                 InitialReading = dto.InitialReading,
                 ServiceProviderId = dto.ServiceProviderId,
                 Notes = dto.Notes,
@@ -211,7 +213,7 @@ public class MeterController : ControllerBase
                 meter.Location = dto.Location;
 
             if (dto.InstallationDate.HasValue)
-                meter.InstallationDate = dto.InstallationDate;
+                meter.InstallationDate = DateTime.SpecifyKind(dto.InstallationDate.Value, DateTimeKind.Utc);
 
             if (dto.InitialReading.HasValue)
                 meter.InitialReading = dto.InitialReading;
