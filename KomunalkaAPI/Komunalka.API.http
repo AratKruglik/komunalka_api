@@ -1,8 +1,8 @@
 ### Komunalka API HTTP Client
 # Base URLs for different environments (uncomment the one you need)
-@KomunalkaAPI_HostAddress = http://localhost:8080/api/v1
+#@KomunalkaAPI_HostAddress = http://localhost:8080/api/v1
 # @KomunalkaAPI_HostAddress = http://localhost:5242/api/v1
-# @KomunalkaAPI_HostAddress = https://localhost:7095/api/v1
+ @KomunalkaAPI_HostAddress = https://localhost:7095/api/v1
 
 # JWT Token variables (update these after successful login)
 # Example tokens from test user:
@@ -1586,8 +1586,9 @@ Content-Disposition: form-data; name="ReadingsJson"
       "meterId": 1,
       "readingValue": 5097,
       "readingDate": "2025-11-25T00:00:00Z",
-      "notes": "Електроенергія",
-      "isEstimated": false
+      "notes": "Електроенергія (денний тариф)",
+      "isEstimated": false,
+      "tariffId": 1
     },
     {
       "meterId": 2,
@@ -2178,7 +2179,7 @@ Authorization: Bearer {{jwt_token}}
   "isActive": true,
   "tariffs": [
     {
-      "utilityTypeId": 2,
+      "utilityTypeId": 3,
       "currencyId": 1,
       "pricingModel": "fixed",
       "baseRate": 35.40,
@@ -2229,6 +2230,113 @@ Authorization: Bearer {{jwt_token}}
 ###
 # Delete a service provider
 DELETE {{KomunalkaAPI_HostAddress}}/service-providers/1
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+# Response 204 No Content
+
+### ============================================================================
+### Tariff Management Endpoints
+### ============================================================================
+
+###
+# Get all tariffs for a service provider
+GET {{KomunalkaAPI_HostAddress}}/service-providers/1/tariffs
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+# Response 200 OK:
+# {
+#   "data": [
+#     {
+#       "id": 1,
+#       "serviceProviderId": 1,
+#       "utilityTypeId": 1,
+#       "currencyId": 1,
+#       "pricingModel": "fixed",
+#       "baseRate": 2.64,
+#       "serviceFee": 0,
+#       "effectiveFrom": "2024-01-01T00:00:00Z",
+#       "effectiveTo": null,
+#       "notes": null,
+#       "utilityTypeName": "Електроенергія",
+#       "currencyCode": "UAH",
+#       "currencySymbol": "₴"
+#     }
+#   ]
+# }
+
+###
+# Create a new tariff for a service provider (day tariff)
+POST {{KomunalkaAPI_HostAddress}}/service-providers/1/tariffs
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "utilityTypeId": 1,
+  "currencyId": 1,
+  "pricingModel": "day",
+  "baseRate": 2.64,
+  "serviceFee": 0,
+  "effectiveFrom": "2024-06-01T00:00:00Z",
+  "effectiveTo": null,
+  "notes": "Денний тариф"
+}
+
+# Response 201 Created:
+# {
+#   "data": {
+#     "id": 2,
+#     "serviceProviderId": 1,
+#     "pricingModel": "day",
+#     "baseRate": 2.64,
+#     "notes": "Денний тариф"
+#   }
+# }
+
+###
+# Create a night tariff for the same provider
+POST {{KomunalkaAPI_HostAddress}}/service-providers/1/tariffs
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "utilityTypeId": 1,
+  "currencyId": 1,
+  "pricingModel": "night",
+  "baseRate": 1.32,
+  "serviceFee": 0,
+  "effectiveFrom": "2024-06-01T00:00:00Z",
+  "effectiveTo": null,
+  "notes": "Нічний тариф"
+}
+
+###
+# Update a tariff
+PUT {{KomunalkaAPI_HostAddress}}/service-providers/1/tariffs/1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "baseRate": 3.00,
+  "notes": "Оновлений тариф"
+}
+
+# Response 200 OK:
+# {
+#   "data": {
+#     "id": 1,
+#     "baseRate": 3.00,
+#     "notes": "Оновлений тариф"
+#   }
+# }
+
+###
+# Delete a tariff
+DELETE {{KomunalkaAPI_HostAddress}}/service-providers/1/tariffs/1
 Accept: application/json
 Authorization: Bearer {{jwt_token}}
 

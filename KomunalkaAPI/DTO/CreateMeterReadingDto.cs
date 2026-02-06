@@ -18,4 +18,6 @@ public class CreateMeterReadingDto
     public string? Notes { get; set; }
 
     public bool IsEstimated { get; set; } = false;
+
+    public int? TariffId { get; set; }
 }

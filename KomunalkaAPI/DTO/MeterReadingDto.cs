@@ -17,5 +17,8 @@ public class MeterReadingDto
     public string? UtilityTypeName { get; set; }
     public string? Unit { get; set; }
 
+    public int? TariffId { get; set; }
+    public string? TariffName { get; set; }
+
     public List<MeterReadingPhotoDto>? Photos { get; set; }
 }

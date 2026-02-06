@@ -37,6 +37,9 @@ public class MeterReading
     [Column("is_estimated")]
     public bool IsEstimated { get; set; } = false;
 
+    [Column("tariff_id")]
+    public int? TariffId { get; set; }
+
     [Column("created_at")]
     public DateTime? CreatedAt { get; set; }
 
@@ -46,6 +49,9 @@ public class MeterReading
     // Navigation properties
     [ForeignKey(nameof(MeterId))]
     public virtual Meter Meter { get; set; } = null!;
+
+    [ForeignKey(nameof(TariffId))]
+    public virtual Tariff? Tariff { get; set; }
 
     public virtual ICollection<MeterReadingPhoto> Photos { get; set; } = new List<MeterReadingPhoto>();
 }
