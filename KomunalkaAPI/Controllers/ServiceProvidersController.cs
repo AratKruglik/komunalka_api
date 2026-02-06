@@ -99,12 +99,12 @@ public class ServiceProvidersController : ControllerBase
             var tariff = new TariffModel
             {
                 ServiceProviderId = serviceProvider.Id,
-                UtilityTypeId = tariffDto.UtilityTypeId,
-                CurrencyId = tariffDto.CurrencyId,
+                UtilityTypeId = tariffDto.UtilityTypeId ?? dto.UtilityTypeId,
+                CurrencyId = tariffDto.CurrencyId ?? 1,
                 PricingModel = tariffDto.PricingModel,
                 BaseRate = tariffDto.BaseRate,
                 ServiceFee = tariffDto.ServiceFee,
-                EffectiveFrom = tariffDto.EffectiveFrom,
+                EffectiveFrom = tariffDto.EffectiveFrom ?? DateTime.UtcNow,
                 EffectiveTo = tariffDto.EffectiveTo,
                 Notes = tariffDto.Notes,
                 CreatedAt = DateTime.UtcNow,
@@ -206,12 +206,12 @@ public class ServiceProvidersController : ControllerBase
         var tariff = new TariffModel
         {
             ServiceProviderId = id,
-            UtilityTypeId = dto.UtilityTypeId,
-            CurrencyId = dto.CurrencyId,
+            UtilityTypeId = dto.UtilityTypeId ?? provider.UtilityTypeId,
+            CurrencyId = dto.CurrencyId ?? 1,
             PricingModel = dto.PricingModel,
             BaseRate = dto.BaseRate,
             ServiceFee = dto.ServiceFee,
-            EffectiveFrom = dto.EffectiveFrom,
+            EffectiveFrom = dto.EffectiveFrom ?? DateTime.UtcNow,
             EffectiveTo = dto.EffectiveTo,
             Notes = dto.Notes,
             CreatedAt = DateTime.UtcNow,
