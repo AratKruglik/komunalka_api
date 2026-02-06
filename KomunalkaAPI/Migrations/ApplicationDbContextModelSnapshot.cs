@@ -1153,7 +1153,6 @@ namespace KomunalkaAPI.Migrations
                     b.HasOne("KomunalkaAPI.Models.Tariff", "Tariff")
                         .WithMany()
                         .HasForeignKey("TariffId")
-                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_meter_readings_tariffs_tariff_id");
 
                     b.Navigation("Meter");
