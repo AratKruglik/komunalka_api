@@ -26,9 +26,9 @@ public class Tariff
     public int CurrencyId { get; set; }
 
     [Required]
-    [StringLength(50)]
-    [Column("pricing_model")]
-    public required string PricingModel { get; set; }
+    [StringLength(100)]
+    [Column("name")]
+    public required string Name { get; set; }
 
     [Required]
     [Column("base_rate", TypeName = "decimal(18,2)")]

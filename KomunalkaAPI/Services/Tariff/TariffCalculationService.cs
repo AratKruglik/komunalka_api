@@ -71,7 +71,7 @@ public class TariffCalculationService : ITariffCalculationService
             CurrencyCode = tariff.Currency?.Code ?? "UAH",
             CurrencySymbol = tariff.Currency?.Symbol ?? "₴",
             TotalCost = totalCost,
-            TariffIdentifier = $"{tariff.PricingModel}-{tariff.Id}",
+            TariffIdentifier = tariff.Name,
             TariffEffectiveFrom = tariff.EffectiveFrom,
             TariffEffectiveTo = tariff.EffectiveTo,
             ConsumptionCost = consumptionCost,

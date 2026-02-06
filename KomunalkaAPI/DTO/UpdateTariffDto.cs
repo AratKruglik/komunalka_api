@@ -8,8 +8,8 @@ public class UpdateTariffDto
 
     public int? CurrencyId { get; set; }
 
-    [StringLength(50)]
-    public string? PricingModel { get; set; }
+    [StringLength(100)]
+    public string? Name { get; set; }
 
     [Range(0, double.MaxValue)]
     public decimal? BaseRate { get; set; }

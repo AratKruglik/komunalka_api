@@ -102,7 +102,7 @@ public class ServiceProvidersController : ControllerBase
                 ServiceProviderId = serviceProvider.Id,
                 UtilityTypeId = tariffDto.UtilityTypeId ?? dto.UtilityTypeId,
                 CurrencyId = tariffDto.CurrencyId ?? 1,
-                PricingModel = tariffDto.PricingModel,
+                Name = tariffDto.Name,
                 BaseRate = tariffDto.BaseRate,
                 ServiceFee = tariffDto.ServiceFee,
                 EffectiveFrom = tariffDto.EffectiveFrom ?? DateTime.UtcNow,
@@ -118,6 +118,7 @@ public class ServiceProvidersController : ControllerBase
             var context = _unitOfWork.GetContext();
             await context.Set<TariffModel>().AddRangeAsync(tariffs);
             await _unitOfWork.CompleteAsync();
+        }
 
         var createdProvider = await LoadProviderWithTariffs(serviceProvider.Id);
 
@@ -215,7 +216,7 @@ public class ServiceProvidersController : ControllerBase
                 ServiceProviderId = t.ServiceProviderId,
                 UtilityTypeId = t.UtilityTypeId,
                 CurrencyId = t.CurrencyId,
-                PricingModel = t.PricingModel,
+                Name = t.Name,
                 BaseRate = t.BaseRate,
                 ServiceFee = t.ServiceFee,
                 EffectiveFrom = t.EffectiveFrom,

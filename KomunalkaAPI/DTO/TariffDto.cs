@@ -6,7 +6,7 @@ public class TariffDto
     public int ServiceProviderId { get; set; }
     public int UtilityTypeId { get; set; }
     public int CurrencyId { get; set; }
-    public required string PricingModel { get; set; }
+    public required string Name { get; set; }
     public decimal BaseRate { get; set; }
     public decimal? ServiceFee { get; set; }
     public DateTime EffectiveFrom { get; set; }

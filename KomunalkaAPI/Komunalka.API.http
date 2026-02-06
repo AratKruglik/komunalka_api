@@ -2105,7 +2105,7 @@ Authorization: Bearer {{jwt_token}}
 #           "serviceProviderId": 1,
 #           "utilityTypeId": 1,
 #           "currencyId": 1,
-#           "pricingModel": "fixed",
+#           "name": "Електроенергія (фіксований)",
 #           "baseRate": 2.64,
 #           "serviceFee": 0,
 #           "effectiveFrom": "2024-01-01T00:00:00Z",
@@ -2181,12 +2181,11 @@ Authorization: Bearer {{jwt_token}}
     {
       "utilityTypeId": 2,
       "currencyId": 1,
-      "pricingModel": "fixed",
+      "name": "Холодна вода",
       "baseRate": 35.40,
       "serviceFee": 0,
       "effectiveFrom": "2024-06-01T00:00:00Z",
-      "effectiveTo": null,
-      "notes": "Холодна вода"
+      "effectiveTo": null
     }
   ]
 }

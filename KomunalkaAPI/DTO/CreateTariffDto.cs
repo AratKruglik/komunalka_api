@@ -9,8 +9,8 @@ public class CreateTariffDto
     public int? CurrencyId { get; set; }
 
     [Required]
-    [StringLength(50)]
-    public required string PricingModel { get; set; }
+    [StringLength(100)]
+    public required string Name { get; set; }
 
     [Required]
     [Range(0, double.MaxValue)]
