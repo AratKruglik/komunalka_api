@@ -2,19 +2,17 @@ using System.ComponentModel.DataAnnotations;
 
 namespace KomunalkaAPI.DTO;
 
-public class CreateTariffDto
+public class UpdateTariffDto
 {
     public int? UtilityTypeId { get; set; }
 
     public int? CurrencyId { get; set; }
 
-    [Required]
     [StringLength(50)]
-    public required string PricingModel { get; set; }
+    public string? PricingModel { get; set; }
 
-    [Required]
     [Range(0, double.MaxValue)]
-    public decimal BaseRate { get; set; }
+    public decimal? BaseRate { get; set; }
 
     [Range(0, double.MaxValue)]
     public decimal? ServiceFee { get; set; }

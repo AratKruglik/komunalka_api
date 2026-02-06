@@ -24,7 +24,6 @@ public class TariffCalculationService : ITariffCalculationService
 
         if (meter == null || meter.ServiceProviderId == null) return null;
 
-        // Load tariffs for the service provider and utility type
         var tariffs = await _unitOfWork.Meters.GetContext()
             .Set<Models.Tariff>()
             .Include(t => t.Currency)
@@ -32,7 +31,6 @@ public class TariffCalculationService : ITariffCalculationService
                        t.UtilityTypeId == meter.UtilityTypeId)
             .ToListAsync();
 
-        // Find effective tariff for the reading date
         var effectiveTariff = tariffs
             .Where(t => t.EffectiveFrom <= readingDate &&
                        (t.EffectiveTo == null || t.EffectiveTo >= readingDate))
@@ -42,9 +40,19 @@ public class TariffCalculationService : ITariffCalculationService
         return effectiveTariff;
     }
 
-    public async Task<TariffCalculationDto?> CalculateCostAsync(Meter meter, decimal consumption, DateTime readingDate)
+    public async Task<TariffCalculationDto?> CalculateCostAsync(Meter meter, decimal consumption, DateTime readingDate, int? tariffId = null)
     {
-        var tariff = await GetEffectiveTariffAsync(meter.Id, readingDate);
+        Models.Tariff? tariff;
+
+        if (tariffId.HasValue)
+        {
+            tariff = await _unitOfWork.Tariffs.GetByIdWithDetailsAsync(tariffId.Value);
+        }
+        else
+        {
+            tariff = await GetEffectiveTariffAsync(meter.Id, readingDate);
+        }
+
         if (tariff == null) return null;
 
         var consumptionCost = consumption * tariff.BaseRate;
@@ -72,13 +80,13 @@ public class TariffCalculationService : ITariffCalculationService
     }
 
     public async Task<List<TariffCalculationDto>> CalculateBatchCostsAsync(
-        List<(Meter meter, decimal consumption, DateTime readingDate)> readings)
+        List<(Meter meter, decimal consumption, DateTime readingDate, int? tariffId)> readings)
     {
         var calculations = new List<TariffCalculationDto>();
 
-        foreach (var (meter, consumption, readingDate) in readings)
+        foreach (var (meter, consumption, readingDate, tariffId) in readings)
         {
-            var calculation = await CalculateCostAsync(meter, consumption, readingDate);
+            var calculation = await CalculateCostAsync(meter, consumption, readingDate, tariffId);
             if (calculation != null)
             {
                 calculations.Add(calculation);

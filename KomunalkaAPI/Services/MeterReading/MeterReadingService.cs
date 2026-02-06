@@ -51,7 +51,7 @@ public class MeterReadingService : IMeterReadingService
         }
 
         var createdReadings = new List<Models.MeterReading>();
-        var calculationsData = new List<(Meter meter, decimal consumption, DateTime readingDate)>();
+        var calculationsData = new List<(Meter meter, decimal consumption, DateTime readingDate, int? tariffId)>();
 
         try
         {
@@ -106,13 +106,14 @@ public class MeterReadingService : IMeterReadingService
                     Consumption = consumption,
                     Notes = readingDto.Notes,
                     IsEstimated = readingDto.IsEstimated,
+                    TariffId = readingDto.TariffId,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
 
                 await _unitOfWork.MeterReadings.AddAsync(meterReading);
                 createdReadings.Add(meterReading);
-                calculationsData.Add((meter, consumption, readingDto.ReadingDate));
+                calculationsData.Add((meter, consumption, readingDto.ReadingDate, readingDto.TariffId));
             }
 
             // Save all readings in single transaction
@@ -176,6 +177,8 @@ public class MeterReadingService : IMeterReadingService
                 Consumption = r.Consumption,
                 Notes = r.Notes,
                 IsEstimated = r.IsEstimated,
+                TariffId = r.TariffId,
+                TariffName = calculations.FirstOrDefault(c => c.MeterId == r.MeterId)?.TariffIdentifier,
                 CreatedAt = r.CreatedAt,
                 UpdatedAt = r.UpdatedAt,
                 MeterName = calculationsData.FirstOrDefault(cd => cd.meter.Id == r.MeterId).meter?.Name,
