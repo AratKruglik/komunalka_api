@@ -55,6 +55,18 @@ public static class SeedData
             await context.AddressTypes.AddRangeAsync(addressTypes);
         }
 
+        if (!context.Currencies.Any())
+        {
+            var currencies = new List<Currency>
+            {
+                new() { Code = "UAH", Name = "Українська гривня", Symbol = "₴" },
+                new() { Code = "USD", Name = "Долар США", Symbol = "$" },
+                new() { Code = "EUR", Name = "Євро", Symbol = "€" }
+            };
+
+            await context.Currencies.AddRangeAsync(currencies);
+        }
+
         if (!context.UtilityTypes.Any())
         {
             var utilityTypes = new List<UtilityType>
