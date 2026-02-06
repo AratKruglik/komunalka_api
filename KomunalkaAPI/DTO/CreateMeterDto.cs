@@ -30,7 +30,8 @@ public class CreateMeterDto
 
     public decimal? InitialReading { get; set; }
 
-    public int? ServiceProviderId { get; set; }
+    [Required(ErrorMessage = "Service provider is required")]
+    public int ServiceProviderId { get; set; }
 
     public string? Notes { get; set; }
 

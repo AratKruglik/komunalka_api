@@ -89,6 +89,18 @@ public class MeterController : ControllerBase
     {
         try
         {
+            // Validate that service provider exists and is active
+            var serviceProvider = await _unitOfWork.ServiceProviders.GetByIdAsync(dto.ServiceProviderId);
+            if (serviceProvider == null)
+                return BadRequest(new { error = "Service provider not found" });
+
+            if (!serviceProvider.IsActive)
+                return BadRequest(new { error = "Service provider is not active" });
+
+            // Optionally validate that utility types match
+            if (serviceProvider.UtilityTypeId != dto.UtilityTypeId)
+                return BadRequest(new { error = "Service provider utility type does not match meter utility type" });
+
             string? photoPath = null;
             if (dto.Photo != null)
             {
@@ -235,7 +247,7 @@ public class MeterController : ControllerBase
             PhotoPath = meter.PhotoPath,
             InstallationDate = meter.InstallationDate,
             InitialReading = meter.InitialReading,
-            ServiceProviderId = meter.ServiceProviderId,
+            ServiceProviderId = meter.ServiceProviderId ?? 0,
             Notes = meter.Notes,
             IsActive = meter.IsActive,
             CreatedAt = meter.CreatedAt,

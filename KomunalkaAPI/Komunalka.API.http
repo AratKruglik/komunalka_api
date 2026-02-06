@@ -1337,6 +1337,7 @@ Authorization: Bearer {{jwt_token}}
 ###
 # Create new meter without photo (requires authentication)
 # utilityTypeId: 1 = Електроенергія, 2 = Газ, 3 = Холодна вода, 4 = Гаряча вода, 5 = Опалення
+# serviceProviderId: REQUIRED - ID of the service provider (must match utility type)
 POST {{KomunalkaAPI_HostAddress}}/meter
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 Authorization: Bearer {{jwt_token}}
@@ -1409,7 +1410,7 @@ true
 #   "serviceProviderName": "Київенерго"
 # }
 #
-# Response 400 Bad Request:
+# Response 400 Bad Request (validation error):
 # {
 #   "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
 #   "title": "One or more validation errors occurred.",
@@ -1417,13 +1418,27 @@ true
 #   "errors": {
 #     "AddressId": ["AddressId is required"],
 #     "UtilityTypeId": ["Invalid utility type ID"],
-#     "SerialNumber": ["Serial number is required"]
+#     "ServiceProviderId": ["Service provider is required"]
 #   }
+# }
+#
+# Response 400 Bad Request (service provider validation):
+# {
+#   "error": "Service provider not found"
+# }
+# OR
+# {
+#   "error": "Service provider is not active"
+# }
+# OR
+# {
+#   "error": "Service provider utility type does not match meter utility type"
 # }
 
 ###
 # Create new meter with photo (requires authentication)
 # Note: Replace "./path/to/meter-photo.jpg" with actual image path
+# serviceProviderId: REQUIRED - ID of the service provider (must match utility type)
 POST {{KomunalkaAPI_HostAddress}}/meter
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 Authorization: Bearer {{jwt_token}}
@@ -1566,8 +1581,22 @@ Authorization: Bearer {{jwt_token}}
 ### ============================================================================
 
 ###
-# Submit batch meter readings for an address (requires authentication)
+# Submit batch meter readings WITHOUT photos (requires authentication)
 # Automatically calculates consumption and cost based on effective tariffs
+# JSON Payload Structure:
+# {
+#   "addressId": 1,
+#   "readings": [
+#     {
+#       "meterId": 1,              // Required: ID of the meter
+#       "readingValue": 5097,      // Required: Current reading value (must be >= 0)
+#       "readingDate": "2025-11-25T00:00:00Z",  // Required: Date and time of reading
+#       "notes": "Примітка",       // Optional: Additional notes (max 1000 characters)
+#       "isEstimated": false,      // Optional: Whether reading is estimated (default: false)
+#       "tariffId": 1              // Optional: Specific tariff to use for calculation
+#     }
+#   ]
+# }
 POST {{KomunalkaAPI_HostAddress}}/meter-readings/batch
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 Authorization: Bearer {{jwt_token}}
@@ -1733,6 +1762,26 @@ Content-Disposition: form-data; name="ReadingsJson"
 # Submit batch meter readings WITH PHOTOS (requires authentication)
 # Photos are matched to meters by meterId in filename (photo_1.jpg, photo_2.jpg, etc.)
 # Note: Replace ./path/to/photo files with actual image paths
+#
+# JSON Payload Structure (same as without photos):
+# {
+#   "addressId": 1,
+#   "readings": [
+#     {
+#       "meterId": 1,              // Required: ID of the meter
+#       "readingValue": 5100,      // Required: Current reading value (must be >= 0)
+#       "readingDate": "2025-11-26T00:00:00Z",  // Required: Date and time of reading
+#       "notes": "Примітка",       // Optional: Additional notes (max 1000 characters)
+#       "isEstimated": false,      // Optional: Whether reading is estimated (default: false)
+#       "tariffId": 1              // Optional: Specific tariff to use for calculation
+#     }
+#   ]
+# }
+#
+# Photos naming convention:
+# - photo_1.jpg will be matched to meterId: 1
+# - photo_2.jpg will be matched to meterId: 2
+# - etc.
 POST {{KomunalkaAPI_HostAddress}}/meter-readings/batch
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 Authorization: Bearer {{jwt_token}}
@@ -1752,7 +1801,8 @@ Content-Disposition: form-data; name="ReadingsJson"
       "readingValue": 5100,
       "readingDate": "2025-11-26T00:00:00Z",
       "notes": "Електроенергія з фото",
-      "isEstimated": false
+      "isEstimated": false,
+      "tariffId": 1
     },
     {
       "meterId": 2,
