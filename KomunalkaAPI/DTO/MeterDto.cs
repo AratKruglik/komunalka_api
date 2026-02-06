@@ -13,7 +13,7 @@ public class MeterDto
     public string? PhotoPath { get; set; }
     public DateTime? InstallationDate { get; set; }
     public decimal? InitialReading { get; set; }
-    public int? ServiceProviderId { get; set; }
+    public int ServiceProviderId { get; set; }
     public string? Notes { get; set; }
     public bool IsActive { get; set; }
     public DateTime? CreatedAt { get; set; }

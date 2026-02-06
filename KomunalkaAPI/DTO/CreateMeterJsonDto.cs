@@ -1,9 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Http;
 
 namespace KomunalkaAPI.DTO;
 
-public class CreateMeterDto
+public class CreateMeterJsonDto
 {
     [Required]
     public int AddressId { get; set; }
@@ -36,6 +35,4 @@ public class CreateMeterDto
     public string? Notes { get; set; }
 
     public bool IsActive { get; set; } = true;
-
-    public IFormFile? Photo { get; set; }
 }

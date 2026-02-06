@@ -79,21 +79,27 @@ public class MeterController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new meter with optional photo
+    /// Create a new meter
     /// </summary>
     [HttpPost]
-    [Consumes("multipart/form-data")]
+    [Consumes("application/json")]
     [ProducesResponseType(typeof(ApiResponse<MeterDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromForm] CreateMeterDto dto)
+    public async Task<IActionResult> Create([FromBody] CreateMeterJsonDto dto)
     {
         try
         {
-            string? photoPath = null;
-            if (dto.Photo != null)
-            {
-                photoPath = await SavePhotoAsync(dto.Photo);
-            }
+            // Validate that service provider exists and is active
+            var serviceProvider = await _unitOfWork.ServiceProviders.GetByIdAsync(dto.ServiceProviderId);
+            if (serviceProvider == null)
+                return BadRequest(new { error = "Service provider not found" });
+
+            if (!serviceProvider.IsActive)
+                return BadRequest(new { error = "Service provider is not active" });
+
+            // Optionally validate that utility types match
+            if (serviceProvider.UtilityTypeId != dto.UtilityTypeId)
+                return BadRequest(new { error = "Service provider utility type does not match meter utility type" });
 
             var meter = new Models.Meter
             {
@@ -104,8 +110,10 @@ public class MeterController : ControllerBase
                 Description = dto.Description,
                 ModelName = dto.ModelName,
                 Location = dto.Location,
-                PhotoPath = photoPath,
-                InstallationDate = dto.InstallationDate,
+                PhotoPath = null,
+                InstallationDate = dto.InstallationDate.HasValue
+                    ? DateTime.SpecifyKind(dto.InstallationDate.Value, DateTimeKind.Utc)
+                    : null,
                 InitialReading = dto.InitialReading,
                 ServiceProviderId = dto.ServiceProviderId,
                 Notes = dto.Notes,
@@ -126,6 +134,50 @@ public class MeterController : ControllerBase
         {
             _logger.LogError(ex, "Error creating meter");
             return BadRequest(new { error = "Failed to create meter", details = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Upload photo for a meter
+    /// </summary>
+    [HttpPost("{id}/photo")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(ApiResponse<MeterDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UploadPhoto(int id, [FromForm] IFormFile photo)
+    {
+        try
+        {
+            var meter = await _unitOfWork.Meters.GetByIdAsync(id);
+            if (meter == null)
+                return NotFound(new { error = "Meter not found" });
+
+            if (photo == null || photo.Length == 0)
+                return BadRequest(new { error = "Photo file is required" });
+
+            // Delete old photo if exists
+            if (!string.IsNullOrEmpty(meter.PhotoPath))
+            {
+                DeletePhoto(meter.PhotoPath);
+            }
+
+            // Save new photo
+            var photoPath = await SavePhotoAsync(photo);
+            meter.PhotoPath = photoPath;
+            meter.UpdatedAt = DateTime.UtcNow;
+
+            _unitOfWork.Meters.Update(meter);
+            await _unitOfWork.CompleteAsync();
+
+            var updatedMeter = await _unitOfWork.Meters.GetByIdAsync(id);
+
+            return Ok(new ApiResponse<MeterDto> { Data = MapToDto(updatedMeter!) });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading meter photo");
+            return BadRequest(new { error = "Failed to upload photo", details = ex.Message });
         }
     }
 
@@ -161,7 +213,7 @@ public class MeterController : ControllerBase
                 meter.Location = dto.Location;
 
             if (dto.InstallationDate.HasValue)
-                meter.InstallationDate = dto.InstallationDate;
+                meter.InstallationDate = DateTime.SpecifyKind(dto.InstallationDate.Value, DateTimeKind.Utc);
 
             if (dto.InitialReading.HasValue)
                 meter.InitialReading = dto.InitialReading;
@@ -235,7 +287,7 @@ public class MeterController : ControllerBase
             PhotoPath = meter.PhotoPath,
             InstallationDate = meter.InstallationDate,
             InitialReading = meter.InitialReading,
-            ServiceProviderId = meter.ServiceProviderId,
+            ServiceProviderId = meter.ServiceProviderId ?? 0,
             Notes = meter.Notes,
             IsActive = meter.IsActive,
             CreatedAt = meter.CreatedAt,
