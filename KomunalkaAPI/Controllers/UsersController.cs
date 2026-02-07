@@ -1,10 +1,12 @@
 using KomunalkaAPI.DTO;
 using KomunalkaAPI.Services.Users;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KomunalkaAPI.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/v{version:apiVersion}/[controller]")]
 [Asp.Versioning.ApiVersion("1.0")]
 public class UsersController(IUserService userService) : ControllerBase
@@ -70,6 +72,7 @@ public class UsersController(IUserService userService) : ControllerBase
         return Ok(result.Data);
     }
 
+    [AllowAnonymous]
     [HttpGet("{id:int}/avatar", Name = "userAvatar")]
     public async Task<IActionResult> GetAvatar(int id)
     {
@@ -91,6 +94,7 @@ public class UsersController(IUserService userService) : ControllerBase
         return File(avatar.FileStream, avatar.MimeType);
     }
 
+    [AllowAnonymous]
     [HttpGet("{id:int}/avatar/thumbnail", Name = "userAvatarThumbnail")]
     public async Task<IActionResult> GetAvatarThumbnail(int id)
     {
