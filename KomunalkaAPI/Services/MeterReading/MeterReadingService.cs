@@ -358,4 +358,67 @@ public class MeterReadingService : IMeterReadingService
 
         return ServiceResult<bool>.Ok(true);
     }
+
+    public async Task<ServiceResult<IEnumerable<DTO.Export.MeterReadingExportDto>>> GetReadingsForExportAsync(
+        int userId,
+        DTO.Export.ExportRequestDto request)
+    {
+        // 1. Get filtered addresses for user
+        var query = _unitOfWork.UserAddresses.GetContext()
+            .Set<UserAddress>()
+            .Include(ua => ua.Address)
+            .Where(ua => ua.UserId == userId);
+
+        if (request.AddressIds != null && request.AddressIds.Any())
+        {
+            query = query.Where(ua => request.AddressIds.Contains(ua.AddressId));
+        }
+
+        var addresses = await query.Select(ua => ua.Address).ToListAsync();
+
+        if (!addresses.Any())
+        {
+            return ServiceResult<IEnumerable<DTO.Export.MeterReadingExportDto>>.Ok(new List<DTO.Export.MeterReadingExportDto>());
+        }
+
+        var addressIds = addresses.Select(a => a.Id).ToList();
+
+        // 2. Fetch readings for these addresses in range
+        var readings = await _unitOfWork.MeterReadings.GetContext()
+            .Set<Models.MeterReading>()
+            .Include(mr => mr.Meter)
+                .ThenInclude(m => m.UtilityType)
+            .Include(mr => mr.Meter)
+                .ThenInclude(m => m.Address)
+            .Include(mr => mr.Tariff)
+                .ThenInclude(t => t!.Currency)
+            .Where(mr => addressIds.Contains(mr.Meter.AddressId) &&
+                         mr.ReadingDate >= request.FromDate &&
+                         mr.ReadingDate <= request.ToDate)
+            .OrderBy(mr => mr.Meter.AddressId)
+            .ThenBy(mr => mr.MeterId)
+            .ThenBy(mr => mr.ReadingDate)
+            .ToListAsync();
+            
+        // 3. Map to DTO
+        var dtos = readings.Select(r => new DTO.Export.MeterReadingExportDto
+        {
+            Address = $"{r.Meter!.Address.City}, {r.Meter.Address.Street} {r.Meter.Address.BuildingNumber}" + 
+                      (r.Meter.Address.ApartmentNumber != null ? $", {r.Meter.Address.ApartmentNumber}" : ""),
+            UtilityType = r.Meter.UtilityType.DisplayName,
+            MeterName = r.Meter.Name,
+            SerialNumber = r.Meter.SerialNumber ?? "",
+            ReadingDate = r.ReadingDate,
+            ReadingValue = r.ReadingValue,
+            PreviousValue = r.PreviousReadingValue,
+            Consumption = r.Consumption,
+            Unit = r.Meter.UtilityType.Unit,
+            TariffName = r.Tariff?.Name ?? "",
+            Cost = null, // Can be calculated if needed, but not stored directly usually
+            Currency = r.Tariff?.Currency?.Code ?? "",
+            IsEstimated = r.IsEstimated
+        }).ToList();
+
+        return ServiceResult<IEnumerable<DTO.Export.MeterReadingExportDto>>.Ok(dtos);
+    }
 }
