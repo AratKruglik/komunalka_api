@@ -78,10 +78,12 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.WriteIndented = true;
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
+
 
 // API Versioning
 builder.Services.AddApiVersioning(options =>
@@ -159,6 +161,8 @@ builder.Services.AddScoped<KomunalkaAPI.Services.Users.IUserService, KomunalkaAP
 builder.Services.AddScoped<KomunalkaAPI.Services.Address.IAddressService, KomunalkaAPI.Services.Address.AddressService>();
 builder.Services.AddScoped<KomunalkaAPI.Services.Image.IFileStorageService, KomunalkaAPI.Services.Image.FileStorageService>();
 builder.Services.AddScoped<KomunalkaAPI.Services.Image.IImageService, KomunalkaAPI.Services.Image.ImageService>();
+builder.Services.AddScoped<KomunalkaAPI.Services.Export.IExportService, KomunalkaAPI.Services.Export.ExportService>();
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 // Background Services
 builder.Services.AddHostedService<KomunalkaAPI.Services.Background.TokenCleanupService>();
