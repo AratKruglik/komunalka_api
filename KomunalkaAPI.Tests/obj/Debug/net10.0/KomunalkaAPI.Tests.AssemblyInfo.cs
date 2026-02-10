@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("KomunalkaAPI.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e78cd362d7cc57dc0e275f2f66a9868b26fb08f6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+31f476e2389f64fbf7a7559919613ac42b556eff")]
 [assembly: System.Reflection.AssemblyProductAttribute("KomunalkaAPI.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("KomunalkaAPI.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
