@@ -2542,8 +2542,9 @@ Content-Type: application/json
 {
   "fromDate": "2023-01-01T00:00:00Z",
   "toDate": "2023-12-31T23:59:59Z",
-  "format": 0
+  "format": "csv"
 }
+
 
 # Response 200 OK:
 # Content-Type: text/csv
@@ -2559,7 +2560,7 @@ Content-Type: application/json
 {
   "fromDate": "2023-01-01T00:00:00Z",
   "toDate": "2023-12-31T23:59:59Z",
-  "format": 1
+  "format": "pdf"
 }
 
 # Response 200 OK:
@@ -2577,5 +2578,5 @@ Content-Type: application/json
   "addressIds": [1, 2],
   "fromDate": "2023-01-01T00:00:00Z",
   "toDate": "2023-12-31T23:59:59Z",
-  "format": 0
+  "format": "csv"
 }
