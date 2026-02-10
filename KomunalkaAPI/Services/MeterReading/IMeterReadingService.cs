@@ -19,4 +19,8 @@ public interface IMeterReadingService
     Task<ServiceResult<MeterReadingDto>> GetByIdAsync(int userId, int readingId);
 
     Task<ServiceResult<bool>> DeleteAsync(int userId, int readingId);
+
+    Task<ServiceResult<IEnumerable<DTO.Export.MeterReadingExportDto>>> GetReadingsForExportAsync(
+        int userId,
+        DTO.Export.ExportRequestDto request);
 }

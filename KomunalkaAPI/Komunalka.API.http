@@ -2528,3 +2528,55 @@ GET http://localhost:8080/health/ready
 # - Configured to allow origins from environment variable
 # - Docker: allows all origins (*)
 # - Local: configure in .env file
+
+### ============================================================================
+### Export Endpoints
+### ============================================================================
+
+###
+# Export meter readings (CSV)
+POST {{KomunalkaAPI_HostAddress}}/export/meter-readings
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "fromDate": "2023-01-01T00:00:00Z",
+  "toDate": "2023-12-31T23:59:59Z",
+  "format": "csv"
+}
+
+
+# Response 200 OK:
+# Content-Type: text/csv
+# Content-Disposition: attachment; filename=meter_readings_20240210120000.csv
+# Body: CSV file content
+
+###
+# Export meter readings (PDF)
+POST {{KomunalkaAPI_HostAddress}}/export/meter-readings
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "fromDate": "2023-01-01T00:00:00Z",
+  "toDate": "2023-12-31T23:59:59Z",
+  "format": "pdf"
+}
+
+# Response 200 OK:
+# Content-Type: application/pdf
+# Content-Disposition: attachment; filename=meter_readings_20240210120000.pdf
+# Body: PDF file binary content
+
+###
+# Export meter readings for specific addresses
+POST {{KomunalkaAPI_HostAddress}}/export/meter-readings
+Authorization: Bearer {{jwt_token}}
+Content-Type: application/json
+
+{
+  "addressIds": [1, 2],
+  "fromDate": "2023-01-01T00:00:00Z",
+  "toDate": "2023-12-31T23:59:59Z",
+  "format": "csv"
+}
