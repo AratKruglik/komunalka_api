@@ -35,6 +35,7 @@ public class TariffCalculationService : ITariffCalculationService
             .Where(t => t.EffectiveFrom <= readingDate &&
                        (t.EffectiveTo == null || t.EffectiveTo >= readingDate))
             .OrderByDescending(t => t.EffectiveFrom)
+            .ThenBy(t => t.Id)
             .FirstOrDefault();
 
         return effectiveTariff;

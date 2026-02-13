@@ -1028,12 +1028,14 @@ Content-Disposition: form-data; name="Value"
 
 # Response 201 Created:
 # {
-#   "id": 1,
-#   "serviceCounterId": 1,
-#   "value": 123.45,
-#   "createdAt": "2025-02-05T10:30:00Z",
-#   "updatedAt": "2025-02-05T10:30:00Z",
-#   "images": []
+#   "data": {
+#     "id": 1,
+#     "serviceCounterId": 1,
+#     "value": 123.45,
+#     "createdAt": "2025-02-05T10:30:00Z",
+#     "updatedAt": "2025-02-05T10:30:00Z",
+#     "images": []
+#   }
 # }
 #
 # Response 400 Bad Request:
@@ -1071,26 +1073,28 @@ Content-Type: image/jpeg
 
 # Response 201 Created:
 # {
-#   "id": 2,
-#   "serviceCounterId": 1,
-#   "value": 150.75,
-#   "createdAt": "2025-02-05T10:35:00Z",
-#   "updatedAt": "2025-02-05T10:35:00Z",
-#   "images": [
-#     {
-#       "id": 1,
-#       "serviceCounterValueId": 2,
-#       "optimizedUrl": "http://localhost:8080/api/v1/meterreading/images/1/optimized",
-#       "thumbnailUrl": "http://localhost:8080/api/v1/meterreading/images/1/thumbnail",
-#       "optimizedSizeInBytes": 204800,
-#       "thumbnailSizeInBytes": 51200,
-#       "width": 1920,
-#       "height": 1080,
-#       "mimeType": "image/jpeg",
-#       "isProcessed": true,
-#       "createdAt": "2025-02-05T10:35:00Z"
-#     }
-#   ]
+#   "data": {
+#     "id": 2,
+#     "serviceCounterId": 1,
+#     "value": 150.75,
+#     "createdAt": "2025-02-05T10:35:00Z",
+#     "updatedAt": "2025-02-05T10:35:00Z",
+#     "images": [
+#       {
+#         "id": 1,
+#         "serviceCounterValueId": 2,
+#         "optimizedUrl": "http://localhost:8080/api/v1/meterreading/images/1/optimized",
+#         "thumbnailUrl": "http://localhost:8080/api/v1/meterreading/images/1/thumbnail",
+#         "optimizedSizeInBytes": 204800,
+#         "thumbnailSizeInBytes": 51200,
+#         "width": 1920,
+#         "height": 1080,
+#         "mimeType": "image/jpeg",
+#         "isProcessed": true,
+#         "createdAt": "2025-02-05T10:35:00Z"
+#       }
+#     ]
+#   }
 # }
 
 ###
@@ -1101,26 +1105,28 @@ Authorization: Bearer {{jwt_token}}
 
 # Response 200 OK:
 # {
-#   "id": 1,
-#   "serviceCounterId": 1,
-#   "value": 123.45,
-#   "createdAt": "2025-02-05T10:30:00Z",
-#   "updatedAt": "2025-02-05T10:30:00Z",
-#   "images": [
-#     {
-#       "id": 1,
-#       "serviceCounterValueId": 1,
-#       "optimizedUrl": "http://localhost:8080/api/v1/meterreading/images/1/optimized",
-#       "thumbnailUrl": "http://localhost:8080/api/v1/meterreading/images/1/thumbnail",
-#       "optimizedSizeInBytes": 204800,
-#       "thumbnailSizeInBytes": 51200,
-#       "width": 1920,
-#       "height": 1080,
-#       "mimeType": "image/jpeg",
-#       "isProcessed": true,
-#       "createdAt": "2025-02-05T10:30:00Z"
-#     }
-#   ]
+#   "data": {
+#     "id": 1,
+#     "serviceCounterId": 1,
+#     "value": 123.45,
+#     "createdAt": "2025-02-05T10:30:00Z",
+#     "updatedAt": "2025-02-05T10:30:00Z",
+#     "images": [
+#       {
+#         "id": 1,
+#         "serviceCounterValueId": 1,
+#         "optimizedUrl": "http://localhost:8080/api/v1/meterreading/images/1/optimized",
+#         "thumbnailUrl": "http://localhost:8080/api/v1/meterreading/images/1/thumbnail",
+#         "optimizedSizeInBytes": 204800,
+#         "thumbnailSizeInBytes": 51200,
+#         "width": 1920,
+#         "height": 1080,
+#         "mimeType": "image/jpeg",
+#         "isProcessed": true,
+#         "createdAt": "2025-02-05T10:30:00Z"
+#       }
+#     ]
+#   }
 # }
 #
 # Response 404 Not Found:
@@ -1187,8 +1193,60 @@ Accept: application/json
 Authorization: Bearer {{jwt_token}}
 
 # Response 200 OK:
-# [
-#   {
+# {
+#   "data": [
+#     {
+#       "id": 1,
+#       "addressId": 1,
+#       "utilityTypeId": 1,
+#       "serialNumber": "AB12345678",
+#       "name": "Лічильник електроенергії",
+#       "description": null,
+#       "modelName": "НІК 2102",
+#       "location": "На кухні біля дверей",
+#       "photoPath": "uploads/meters/meter_1_photo.jpg",
+#       "installationDate": "2024-01-15T00:00:00Z",
+#       "initialReading": 1500.50,
+#       "serviceProviderId": 1,
+#       "notes": "Перевірено та опломбовано",
+#       "isActive": true,
+#       "createdAt": "2025-01-15T10:00:00Z",
+#       "updatedAt": "2025-01-15T10:00:00Z",
+#       "utilityTypeName": "Електроенергія",
+#       "serviceProviderName": "Київенерго"
+#     },
+#     {
+#       "id": 2,
+#       "addressId": 1,
+#       "utilityTypeId": 2,
+#       "serialNumber": "GZ98765432",
+#       "name": "Лічильник газу",
+#       "description": null,
+#       "modelName": "Metrix G4",
+#       "location": "У коридорі на стіні",
+#       "photoPath": null,
+#       "installationDate": "2024-02-20T00:00:00Z",
+#       "initialReading": 250.0,
+#       "serviceProviderId": 1,
+#       "notes": "Встановлено та опломбовано газовою службою",
+#       "isActive": true,
+#       "createdAt": "2025-01-15T10:05:00Z",
+#       "updatedAt": "2025-01-15T10:05:00Z",
+#       "utilityTypeName": "Газ",
+#       "serviceProviderName": "Київгаз"
+#     }
+#   ]
+# }
+
+###
+# Get meter by ID (requires authentication)
+GET {{KomunalkaAPI_HostAddress}}/meter/1
+Accept: application/json
+Authorization: Bearer {{jwt_token}}
+
+# Response 200 OK:
+# {
+#   "data": {
 #     "id": 1,
 #     "addressId": 1,
 #     "utilityTypeId": 1,
@@ -1207,55 +1265,7 @@ Authorization: Bearer {{jwt_token}}
 #     "updatedAt": "2025-01-15T10:00:00Z",
 #     "utilityTypeName": "Електроенергія",
 #     "serviceProviderName": "Київенерго"
-#   },
-#   {
-#     "id": 2,
-#     "addressId": 1,
-#     "utilityTypeId": 2,
-#     "serialNumber": "GZ98765432",
-#     "name": "Лічильник газу",
-#     "description": null,
-#     "modelName": "Metrix G4",
-#     "location": "У коридорі на стіні",
-#     "photoPath": null,
-#     "installationDate": "2024-02-20T00:00:00Z",
-#     "initialReading": 250.0,
-#     "serviceProviderId": 1,
-#     "notes": "Встановлено та опломбовано газовою службою",
-#     "isActive": true,
-#     "createdAt": "2025-01-15T10:05:00Z",
-#     "updatedAt": "2025-01-15T10:05:00Z",
-#     "utilityTypeName": "Газ",
-#     "serviceProviderName": "Київгаз"
 #   }
-# ]
-
-###
-# Get meter by ID (requires authentication)
-GET {{KomunalkaAPI_HostAddress}}/meter/1
-Accept: application/json
-Authorization: Bearer {{jwt_token}}
-
-# Response 200 OK:
-# {
-#   "id": 1,
-#   "addressId": 1,
-#   "utilityTypeId": 1,
-#   "serialNumber": "AB12345678",
-#   "name": "Лічильник електроенергії",
-#   "description": null,
-#   "modelName": "НІК 2102",
-#   "location": "На кухні біля дверей",
-#   "photoPath": "uploads/meters/meter_1_photo.jpg",
-#   "installationDate": "2024-01-15T00:00:00Z",
-#   "initialReading": 1500.50,
-#   "serviceProviderId": 1,
-#   "notes": "Перевірено та опломбовано",
-#   "isActive": true,
-#   "createdAt": "2025-01-15T10:00:00Z",
-#   "updatedAt": "2025-01-15T10:00:00Z",
-#   "utilityTypeName": "Електроенергія",
-#   "serviceProviderName": "Київенерго"
 # }
 #
 # Response 404 Not Found:
@@ -1273,28 +1283,30 @@ Accept: application/json
 Authorization: Bearer {{jwt_token}}
 
 # Response 200 OK:
-# [
-#   {
-#     "id": 1,
-#     "addressId": 1,
-#     "utilityTypeId": 1,
-#     "serialNumber": "AB12345678",
-#     "name": "Лічильник електроенергії",
-#     "description": null,
-#     "modelName": "НІК 2102",
-#     "location": "На кухні біля дверей",
-#     "photoPath": "uploads/meters/meter_1_photo.jpg",
-#     "installationDate": "2024-01-15T00:00:00Z",
-#     "initialReading": 1500.50,
-#     "serviceProviderId": 1,
-#     "notes": "Перевірено та опломбовано",
-#     "isActive": true,
-#     "createdAt": "2025-01-15T10:00:00Z",
-#     "updatedAt": "2025-01-15T10:00:00Z",
-#     "utilityTypeName": "Електроенергія",
-#     "serviceProviderName": "Київенерго"
-#   }
-# ]
+# {
+#   "data": [
+#     {
+#       "id": 1,
+#       "addressId": 1,
+#       "utilityTypeId": 1,
+#       "serialNumber": "AB12345678",
+#       "name": "Лічильник електроенергії",
+#       "description": null,
+#       "modelName": "НІК 2102",
+#       "location": "На кухні біля дверей",
+#       "photoPath": "uploads/meters/meter_1_photo.jpg",
+#       "installationDate": "2024-01-15T00:00:00Z",
+#       "initialReading": 1500.50,
+#       "serviceProviderId": 1,
+#       "notes": "Перевірено та опломбовано",
+#       "isActive": true,
+#       "createdAt": "2025-01-15T10:00:00Z",
+#       "updatedAt": "2025-01-15T10:00:00Z",
+#       "utilityTypeName": "Електроенергія",
+#       "serviceProviderName": "Київенерго"
+#     }
+#   ]
+# }
 #
 # Response 404 Not Found:
 # {
@@ -1311,28 +1323,30 @@ Accept: application/json
 Authorization: Bearer {{jwt_token}}
 
 # Response 200 OK:
-# [
-#   {
-#     "id": 1,
-#     "addressId": 1,
-#     "utilityTypeId": 1,
-#     "serialNumber": "AB12345678",
-#     "name": "Лічильник електроенергії",
-#     "description": null,
-#     "modelName": "НІК 2102",
-#     "location": "На кухні біля дверей",
-#     "photoPath": "uploads/meters/meter_1_photo.jpg",
-#     "installationDate": "2024-01-15T00:00:00Z",
-#     "initialReading": 1500.50,
-#     "serviceProviderId": 1,
-#     "notes": "Перевірено та опломбовано",
-#     "isActive": true,
-#     "createdAt": "2025-01-15T10:00:00Z",
-#     "updatedAt": "2025-01-15T10:00:00Z",
-#     "utilityTypeName": "Електроенергія",
-#     "serviceProviderName": "Київенерго"
-#   }
-# ]
+# {
+#   "data": [
+#     {
+#       "id": 1,
+#       "addressId": 1,
+#       "utilityTypeId": 1,
+#       "serialNumber": "AB12345678",
+#       "name": "Лічильник електроенергії",
+#       "description": null,
+#       "modelName": "НІК 2102",
+#       "location": "На кухні біля дверей",
+#       "photoPath": "uploads/meters/meter_1_photo.jpg",
+#       "installationDate": "2024-01-15T00:00:00Z",
+#       "initialReading": 1500.50,
+#       "serviceProviderId": 1,
+#       "notes": "Перевірено та опломбовано",
+#       "isActive": true,
+#       "createdAt": "2025-01-15T10:00:00Z",
+#       "updatedAt": "2025-01-15T10:00:00Z",
+#       "utilityTypeName": "Електроенергія",
+#       "serviceProviderName": "Київенерго"
+#     }
+#   ]
+# }
 
 ###
 # Create new meter (requires authentication)
@@ -1358,24 +1372,26 @@ Authorization: Bearer {{jwt_token}}
 
 # Response 201 Created:
 # {
-#   "id": 1,
-#   "addressId": 1,
-#   "utilityTypeId": 1,
-#   "serialNumber": "AB12345678",
-#   "name": "Лічильник електроенергії",
-#   "description": null,
-#   "modelName": "НІК 2102",
-#   "location": "На кухні біля дверей",
-#   "photoPath": null,
-#   "installationDate": "2024-01-15T00:00:00Z",
-#   "initialReading": 1500.50,
-#   "serviceProviderId": 1,
-#   "notes": "Перевірено та опломбовано",
-#   "isActive": true,
-#   "createdAt": "2025-02-05T10:00:00Z",
-#   "updatedAt": "2025-02-05T10:00:00Z",
-#   "utilityTypeName": "Електроенергія",
-#   "serviceProviderName": "Київенерго"
+#   "data": {
+#     "id": 1,
+#     "addressId": 1,
+#     "utilityTypeId": 1,
+#     "serialNumber": "AB12345678",
+#     "name": "Лічильник електроенергії",
+#     "description": null,
+#     "modelName": "НІК 2102",
+#     "location": "На кухні біля дверей",
+#     "photoPath": null,
+#     "installationDate": "2024-01-15T00:00:00Z",
+#     "initialReading": 1500.50,
+#     "serviceProviderId": 1,
+#     "notes": "Перевірено та опломбовано",
+#     "isActive": true,
+#     "createdAt": "2025-02-05T10:00:00Z",
+#     "updatedAt": "2025-02-05T10:00:00Z",
+#     "utilityTypeName": "Електроенергія",
+#     "serviceProviderName": "Київенерго"
+#   }
 # }
 #
 # Response 400 Bad Request (validation error):
@@ -1468,24 +1484,26 @@ Authorization: Bearer {{jwt_token}}
 
 # Response 200 OK:
 # {
-#   "id": 1,
-#   "addressId": 1,
-#   "utilityTypeId": 1,
-#   "serialNumber": "AB12345678-NEW",
-#   "name": "Лічильник електроенергії (оновлено)",
-#   "description": null,
-#   "modelName": "НІК 2102-01",
-#   "location": "На кухні біля дверей (ліва стіна)",
-#   "photoPath": "uploads/meters/meter_1_photo.jpg",
-#   "installationDate": "2024-01-15T00:00:00Z",
-#   "initialReading": 1500.50,
-#   "serviceProviderId": 1,
-#   "notes": "Пройшов повірку 2024-11-25",
-#   "isActive": true,
-#   "createdAt": "2025-01-15T10:00:00Z",
-#   "updatedAt": "2025-02-05T10:10:00Z",
-#   "utilityTypeName": "Електроенергія",
-#   "serviceProviderName": "Київенерго"
+#   "data": {
+#     "id": 1,
+#     "addressId": 1,
+#     "utilityTypeId": 1,
+#     "serialNumber": "AB12345678-NEW",
+#     "name": "Лічильник електроенергії (оновлено)",
+#     "description": null,
+#     "modelName": "НІК 2102-01",
+#     "location": "На кухні біля дверей (ліва стіна)",
+#     "photoPath": "uploads/meters/meter_1_photo.jpg",
+#     "installationDate": "2024-01-15T00:00:00Z",
+#     "initialReading": 1500.50,
+#     "serviceProviderId": 1,
+#     "notes": "Пройшов повірку 2024-11-25",
+#     "isActive": true,
+#     "createdAt": "2025-01-15T10:00:00Z",
+#     "updatedAt": "2025-02-05T10:10:00Z",
+#     "utilityTypeName": "Електроенергія",
+#     "serviceProviderName": "Київенерго"
+#   }
 # }
 #
 # Response 404 Not Found:
@@ -1574,13 +1592,14 @@ Content-Disposition: form-data; name="ReadingsJson"
 
 # Response 201 Created:
 # {
-#   "addressId": 1,
-#   "addressDisplay": "Київ, вул. Хрещатик, 1, кв. 101",
-#   "readings": [
-#     {
-#       "id": 1,
-#       "meterId": 1,
-#       "readingValue": 5097.0,
+#   "data": {
+#     "addressId": 1,
+#     "addressDisplay": "Київ, вул. Хрещатик, 1, кв. 101",
+#     "readings": [
+#       {
+#         "id": 1,
+#         "meterId": 1,
+#         "readingValue": 5097.0,
 #       "readingDate": "2025-11-25T00:00:00Z",
 #       "previousReadingValue": 5000.0,
 #       "consumption": 97.0,
@@ -1679,10 +1698,11 @@ Content-Disposition: form-data; name="ReadingsJson"
 #       "serviceFeeCost": 5.00
 #     }
 #   ],
-#   "totalCost": 489.02,
-#   "currencyCode": "UAH",
-#   "currencySymbol": "₴",
-#   "submittedAt": "2025-02-05T10:30:00Z"
+#     "totalCost": 489.02,
+#     "currencyCode": "UAH",
+#     "currencySymbol": "₴",
+#     "submittedAt": "2025-02-05T10:30:00Z"
+#   }
 # }
 #
 # Response 400 Bad Request:
@@ -1762,13 +1782,14 @@ Content-Type: image/jpeg
 
 # Response 201 Created:
 # {
-#   "addressId": 1,
-#   "addressDisplay": "Київ, вул. Хрещатик, 1, кв. 101",
-#   "readings": [
-#     {
-#       "id": 4,
-#       "meterId": 1,
-#       "readingValue": 5100.0,
+#   "data": {
+#     "addressId": 1,
+#     "addressDisplay": "Київ, вул. Хрещатик, 1, кв. 101",
+#     "readings": [
+#       {
+#         "id": 4,
+#         "meterId": 1,
+#         "readingValue": 5100.0,
 #       "readingDate": "2025-11-26T00:00:00Z",
 #       "previousReadingValue": 5097.0,
 #       "consumption": 3.0,
@@ -1852,10 +1873,11 @@ Content-Type: image/jpeg
 #       "serviceFeeCost": 0.0
 #     }
 #   ],
-#   "totalCost": 39.88,
-#   "currencyCode": "UAH",
-#   "currencySymbol": "₴",
-#   "submittedAt": "2025-02-05T10:35:00Z"
+#     "totalCost": 39.88,
+#     "currencyCode": "UAH",
+#     "currencySymbol": "₴",
+#     "submittedAt": "2025-02-05T10:35:00Z"
+#   }
 # }
 
 ###
@@ -1865,40 +1887,42 @@ Accept: application/json
 Authorization: Bearer {{jwt_token}}
 
 # Response 200 OK:
-# [
-#   {
-#     "id": 1,
-#     "meterId": 1,
-#     "readingValue": 5097.0,
-#     "readingDate": "2025-11-25T00:00:00Z",
-#     "previousReadingValue": 5000.0,
-#     "consumption": 97.0,
-#     "notes": "Електроенергія",
-#     "isEstimated": false,
-#     "createdAt": "2025-02-05T10:30:00Z",
-#     "updatedAt": "2025-02-05T10:30:00Z",
-#     "meterName": "Лічильник електроенергії",
-#     "utilityTypeName": "Електроенергія",
-#     "unit": "кВт·год",
-#     "photos": []
-#   },
-#   {
-#     "id": 2,
-#     "meterId": 2,
-#     "readingValue": 606.0,
-#     "readingDate": "2025-11-25T00:00:00Z",
-#     "previousReadingValue": 600.0,
-#     "consumption": 6.0,
-#     "notes": "Газ",
-#     "isEstimated": false,
-#     "createdAt": "2025-02-05T10:30:00Z",
-#     "updatedAt": "2025-02-05T10:30:00Z",
-#     "meterName": "Лічильник газу",
-#     "utilityTypeName": "Газ",
-#     "unit": "м³",
-#     "photos": []
-#   }
-# ]
+# {
+#   "data": [
+#     {
+#       "id": 1,
+#       "meterId": 1,
+#       "readingValue": 5097.0,
+#       "readingDate": "2025-11-25T00:00:00Z",
+#       "previousReadingValue": 5000.0,
+#       "consumption": 97.0,
+#       "notes": "Електроенергія",
+#       "isEstimated": false,
+#       "createdAt": "2025-02-05T10:30:00Z",
+#       "updatedAt": "2025-02-05T10:30:00Z",
+#       "meterName": "Лічильник електроенергії",
+#       "utilityTypeName": "Електроенергія",
+#       "unit": "кВт·год",
+#       "photos": []
+#     },
+#     {
+#       "id": 2,
+#       "meterId": 2,
+#       "readingValue": 606.0,
+#       "readingDate": "2025-11-25T00:00:00Z",
+#       "previousReadingValue": 600.0,
+#       "consumption": 6.0,
+#       "notes": "Газ",
+#       "isEstimated": false,
+#       "createdAt": "2025-02-05T10:30:00Z",
+#       "updatedAt": "2025-02-05T10:30:00Z",
+#       "meterName": "Лічильник газу",
+#       "utilityTypeName": "Газ",
+#       "unit": "м³",
+#       "photos": []
+#     }
+#   ]
+# }
 
 ###
 # Get meter readings by address ID with date range (requires authentication)
@@ -1907,24 +1931,26 @@ Accept: application/json
 Authorization: Bearer {{jwt_token}}
 
 # Response 200 OK:
-# [
-#   {
-#     "id": 1,
-#     "meterId": 1,
-#     "readingValue": 5097.0,
-#     "readingDate": "2025-11-25T00:00:00Z",
-#     "previousReadingValue": 5000.0,
-#     "consumption": 97.0,
-#     "notes": "Електроенергія",
-#     "isEstimated": false,
-#     "createdAt": "2025-02-05T10:30:00Z",
-#     "updatedAt": "2025-02-05T10:30:00Z",
-#     "meterName": "Лічильник електроенергії",
-#     "utilityTypeName": "Електроенергія",
-#     "unit": "кВт·год",
-#     "photos": []
-#   }
-# ]
+# {
+#   "data": [
+#     {
+#       "id": 1,
+#       "meterId": 1,
+#       "readingValue": 5097.0,
+#       "readingDate": "2025-11-25T00:00:00Z",
+#       "previousReadingValue": 5000.0,
+#       "consumption": 97.0,
+#       "notes": "Електроенергія",
+#       "isEstimated": false,
+#       "createdAt": "2025-02-05T10:30:00Z",
+#       "updatedAt": "2025-02-05T10:30:00Z",
+#       "meterName": "Лічильник електроенергії",
+#       "utilityTypeName": "Електроенергія",
+#       "unit": "кВт·год",
+#       "photos": []
+#     }
+#   ]
+# }
 
 ###
 # Get single meter reading by ID (requires authentication)
@@ -1934,29 +1960,31 @@ Authorization: Bearer {{jwt_token}}
 
 # Response 200 OK:
 # {
-#   "id": 1,
-#   "meterId": 1,
-#   "readingValue": 5097.0,
-#   "readingDate": "2025-11-25T00:00:00Z",
-#   "previousReadingValue": 5000.0,
-#   "consumption": 97.0,
-#   "notes": "Електроенергія",
-#   "isEstimated": false,
-#   "createdAt": "2025-02-05T10:30:00Z",
-#   "updatedAt": "2025-02-05T10:30:00Z",
-#   "meterName": "Лічильник електроенергії",
-#   "utilityTypeName": "Електроенергія",
-#   "unit": "кВт·год",
-#   "photos": [
-#     {
-#       "id": 1,
-#       "optimizedUrl": "http://localhost:8080/api/v1/meter-readings/photos/1/optimized",
-#       "thumbnailUrl": "http://localhost:8080/api/v1/meter-readings/photos/1/thumbnail",
-#       "width": 1920,
-#       "height": 1080,
-#       "isProcessed": true
-#     }
-#   ]
+#   "data": {
+#     "id": 1,
+#     "meterId": 1,
+#     "readingValue": 5097.0,
+#     "readingDate": "2025-11-25T00:00:00Z",
+#     "previousReadingValue": 5000.0,
+#     "consumption": 97.0,
+#     "notes": "Електроенергія",
+#     "isEstimated": false,
+#     "createdAt": "2025-02-05T10:30:00Z",
+#     "updatedAt": "2025-02-05T10:30:00Z",
+#     "meterName": "Лічильник електроенергії",
+#     "utilityTypeName": "Електроенергія",
+#     "unit": "кВт·год",
+#     "photos": [
+#       {
+#         "id": 1,
+#         "optimizedUrl": "http://localhost:8080/api/v1/meter-readings/photos/1/optimized",
+#         "thumbnailUrl": "http://localhost:8080/api/v1/meter-readings/photos/1/thumbnail",
+#         "width": 1920,
+#         "height": 1080,
+#         "isProcessed": true
+#       }
+#     ]
+#   }
 # }
 #
 # Response 404 Not Found:
@@ -2224,10 +2252,9 @@ Authorization: Bearer {{jwt_token}}
 ### ============================================================================
 
 ###
-# Get all currencies (requires authentication)
+# Get all currencies (no authentication required)
 GET {{KomunalkaAPI_HostAddress}}/currency
 Accept: application/json
-Authorization: Bearer {{jwt_token}}
 
 # Response 200 OK:
 # [
@@ -2258,10 +2285,9 @@ Authorization: Bearer {{jwt_token}}
 # ]
 
 ###
-# Get currency by ID (requires authentication)
+# Get currency by ID (no authentication required)
 GET {{KomunalkaAPI_HostAddress}}/currency/1
 Accept: application/json
-Authorization: Bearer {{jwt_token}}
 
 # Response 200 OK:
 # {
@@ -2282,10 +2308,9 @@ Authorization: Bearer {{jwt_token}}
 # }
 
 ###
-# Create new currency (requires authentication)
+# Create new currency (no authentication required)
 POST {{KomunalkaAPI_HostAddress}}/currency
 Content-Type: application/json
-Authorization: Bearer {{jwt_token}}
 
 {
   "name": "US Dollar",
@@ -2315,10 +2340,9 @@ Authorization: Bearer {{jwt_token}}
 # }
 
 ###
-# Update currency (requires authentication)
+# Update currency (no authentication required)
 PUT {{KomunalkaAPI_HostAddress}}/currency/1
 Content-Type: application/json
-Authorization: Bearer {{jwt_token}}
 
 {
   "name": "Euro",
@@ -2345,9 +2369,8 @@ Authorization: Bearer {{jwt_token}}
 # }
 
 ###
-# Delete currency (requires authentication)
+# Delete currency (no authentication required)
 DELETE {{KomunalkaAPI_HostAddress}}/currency/1
-Authorization: Bearer {{jwt_token}}
 
 # Response 204 No Content
 #

@@ -15,6 +15,7 @@ public class MeterReadingRepository : Repository<Models.MeterReading>, IMeterRea
             .Include(mr => mr.Meter)
                 .ThenInclude(m => m.UtilityType)
             .Include(mr => mr.Photos)
+            .Include(mr => mr.Tariff)
             .OrderByDescending(mr => mr.ReadingDate)
             .ToListAsync();
     }
@@ -26,6 +27,7 @@ public class MeterReadingRepository : Repository<Models.MeterReading>, IMeterRea
             .Include(mr => mr.Meter)
                 .ThenInclude(m => m.UtilityType)
             .Include(mr => mr.Photos)
+            .Include(mr => mr.Tariff)
             .OrderByDescending(mr => mr.ReadingDate)
             .ToListAsync();
     }
@@ -37,6 +39,19 @@ public class MeterReadingRepository : Repository<Models.MeterReading>, IMeterRea
             .Include(mr => mr.Meter)
                 .ThenInclude(m => m.UtilityType)
             .Include(mr => mr.Photos)
+            .Include(mr => mr.Tariff)
+            .OrderByDescending(mr => mr.ReadingDate)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<Models.MeterReading?> GetLatestByMeterAndTariffAsync(int meterId, int tariffId)
+    {
+        return await _dbSet
+            .Where(mr => mr.MeterId == meterId && mr.TariffId == tariffId)
+            .Include(mr => mr.Meter)
+                .ThenInclude(m => m.UtilityType)
+            .Include(mr => mr.Photos)
+            .Include(mr => mr.Tariff)
             .OrderByDescending(mr => mr.ReadingDate)
             .FirstOrDefaultAsync();
     }
@@ -48,6 +63,7 @@ public class MeterReadingRepository : Repository<Models.MeterReading>, IMeterRea
             .Include(mr => mr.Meter)
                 .ThenInclude(m => m.UtilityType)
             .Include(mr => mr.Photos)
+            .Include(mr => mr.Tariff)
             .OrderByDescending(mr => mr.ReadingDate)
             .ToListAsync();
     }
@@ -59,14 +75,9 @@ public class MeterReadingRepository : Repository<Models.MeterReading>, IMeterRea
             .Include(mr => mr.Meter)
                 .ThenInclude(m => m.UtilityType)
             .Include(mr => mr.Photos)
+            .Include(mr => mr.Tariff)
             .OrderByDescending(mr => mr.ReadingDate)
             .ToListAsync();
     }
 
-    public async Task<bool> HasReadingOnDateAsync(int meterId, DateTime date)
-    {
-        var dateOnly = date.Date;
-        return await _dbSet
-            .AnyAsync(mr => mr.MeterId == meterId && mr.ReadingDate.Date == dateOnly);
-    }
 }
