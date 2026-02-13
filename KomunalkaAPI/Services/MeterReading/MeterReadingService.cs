@@ -58,6 +58,8 @@ public class MeterReadingService : IMeterReadingService
             // Process each reading
             foreach (var readingDto in dto.Readings)
             {
+                var readingDateUtc = DateTime.SpecifyKind(readingDto.ReadingDate, DateTimeKind.Utc);
+
                 // Validate meter belongs to address and is active
                 var meter = await _unitOfWork.Meters.GetContext()
                     .Set<Meter>()
@@ -74,7 +76,7 @@ public class MeterReadingService : IMeterReadingService
 
                 // Check for duplicate reading on same date
                 var hasReading = await _unitOfWork.MeterReadings.HasReadingOnDateAsync(
-                    readingDto.MeterId, readingDto.ReadingDate);
+                    readingDto.MeterId, readingDateUtc);
 
                 if (hasReading)
                 {
@@ -101,7 +103,7 @@ public class MeterReadingService : IMeterReadingService
                 {
                     MeterId = readingDto.MeterId,
                     ReadingValue = readingDto.ReadingValue,
-                    ReadingDate = readingDto.ReadingDate,
+                    ReadingDate = readingDateUtc,
                     PreviousReadingValue = previousValue,
                     Consumption = consumption,
                     Notes = readingDto.Notes,
@@ -113,7 +115,7 @@ public class MeterReadingService : IMeterReadingService
 
                 await _unitOfWork.MeterReadings.AddAsync(meterReading);
                 createdReadings.Add(meterReading);
-                calculationsData.Add((meter, consumption, readingDto.ReadingDate, readingDto.TariffId));
+                calculationsData.Add((meter, consumption, readingDateUtc, readingDto.TariffId));
             }
 
             // Save all readings in single transaction
@@ -241,7 +243,9 @@ public class MeterReadingService : IMeterReadingService
         if (from.HasValue && to.HasValue)
         {
             readings = await _unitOfWork.MeterReadings.GetByAddressAndDateRangeAsync(
-                addressId, from.Value, to.Value);
+                addressId,
+                DateTime.SpecifyKind(from.Value, DateTimeKind.Utc),
+                DateTime.SpecifyKind(to.Value, DateTimeKind.Utc));
         }
         else
         {
@@ -393,8 +397,8 @@ public class MeterReadingService : IMeterReadingService
             .Include(mr => mr.Tariff)
                 .ThenInclude(t => t!.Currency)
             .Where(mr => addressIds.Contains(mr.Meter.AddressId) &&
-                         mr.ReadingDate >= request.FromDate &&
-                         mr.ReadingDate <= request.ToDate)
+                         mr.ReadingDate >= DateTime.SpecifyKind(request.FromDate, DateTimeKind.Utc) &&
+                         mr.ReadingDate <= DateTime.SpecifyKind(request.ToDate, DateTimeKind.Utc))
             .OrderBy(mr => mr.Meter.AddressId)
             .ThenBy(mr => mr.MeterId)
             .ThenBy(mr => mr.ReadingDate)
