@@ -74,20 +74,6 @@ public class MeterReadingService : IMeterReadingService
                         $"Meter {readingDto.MeterId} not found or inactive for this address");
                 }
 
-                // Get previous reading
-                var previousReading = await _unitOfWork.MeterReadings.GetLatestByMeterIdAsync(readingDto.MeterId);
-                var previousValue = previousReading?.ReadingValue ?? meter.InitialReading ?? 0;
-
-                // Validate current >= previous
-                if (readingDto.ReadingValue < previousValue)
-                {
-                    return ServiceResult<BatchMeterReadingResponseDto>.Fail(
-                        $"Current reading ({readingDto.ReadingValue}) for meter {meter.Name} cannot be less than previous reading ({previousValue})");
-                }
-
-                // Calculate consumption
-                var consumption = readingDto.ReadingValue - previousValue;
-
                 int? effectiveTariffId = readingDto.TariffId;
                 if (effectiveTariffId == null)
                 {
@@ -95,6 +81,19 @@ public class MeterReadingService : IMeterReadingService
                         meter.Id, readingDateUtc);
                     effectiveTariffId = resolvedTariff?.Id;
                 }
+
+                var previousReading = effectiveTariffId != null
+                    ? await _unitOfWork.MeterReadings.GetLatestByMeterAndTariffAsync(readingDto.MeterId, effectiveTariffId.Value)
+                    : await _unitOfWork.MeterReadings.GetLatestByMeterIdAsync(readingDto.MeterId);
+                var previousValue = previousReading?.ReadingValue ?? meter.InitialReading ?? 0;
+
+                if (readingDto.ReadingValue < previousValue)
+                {
+                    return ServiceResult<BatchMeterReadingResponseDto>.Fail(
+                        $"Current reading ({readingDto.ReadingValue}) for meter {meter.Name} cannot be less than previous reading ({previousValue})");
+                }
+
+                var consumption = readingDto.ReadingValue - previousValue;
 
                 var meterReading = new Models.MeterReading
                 {

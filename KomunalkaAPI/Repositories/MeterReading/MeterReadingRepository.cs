@@ -44,6 +44,18 @@ public class MeterReadingRepository : Repository<Models.MeterReading>, IMeterRea
             .FirstOrDefaultAsync();
     }
 
+    public async Task<Models.MeterReading?> GetLatestByMeterAndTariffAsync(int meterId, int tariffId)
+    {
+        return await _dbSet
+            .Where(mr => mr.MeterId == meterId && mr.TariffId == tariffId)
+            .Include(mr => mr.Meter)
+                .ThenInclude(m => m.UtilityType)
+            .Include(mr => mr.Photos)
+            .Include(mr => mr.Tariff)
+            .OrderByDescending(mr => mr.ReadingDate)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<IEnumerable<Models.MeterReading>> GetByDateRangeAsync(int meterId, DateTime from, DateTime to)
     {
         return await _dbSet

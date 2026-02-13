@@ -5,6 +5,7 @@ public interface IMeterReadingRepository : IRepository<Models.MeterReading>
     Task<IEnumerable<Models.MeterReading>> GetByMeterIdAsync(int meterId);
     Task<IEnumerable<Models.MeterReading>> GetByAddressIdAsync(int addressId);
     Task<Models.MeterReading?> GetLatestByMeterIdAsync(int meterId);
+    Task<Models.MeterReading?> GetLatestByMeterAndTariffAsync(int meterId, int tariffId);
     Task<IEnumerable<Models.MeterReading>> GetByDateRangeAsync(int meterId, DateTime from, DateTime to);
     Task<IEnumerable<Models.MeterReading>> GetByAddressAndDateRangeAsync(int addressId, DateTime from, DateTime to);
 }
