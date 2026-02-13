@@ -68,10 +68,4 @@ public class MeterReadingRepository : Repository<Models.MeterReading>, IMeterRea
             .ToListAsync();
     }
 
-    public async Task<bool> HasReadingOnDateAsync(int meterId, DateTime date)
-    {
-        var dateOnly = date.Date;
-        return await _dbSet
-            .AnyAsync(mr => mr.MeterId == meterId && mr.ReadingDate.Date == dateOnly);
-    }
 }

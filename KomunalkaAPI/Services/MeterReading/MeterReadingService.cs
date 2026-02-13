@@ -74,16 +74,6 @@ public class MeterReadingService : IMeterReadingService
                         $"Meter {readingDto.MeterId} not found or inactive for this address");
                 }
 
-                // Check for duplicate reading on same date
-                var hasReading = await _unitOfWork.MeterReadings.HasReadingOnDateAsync(
-                    readingDto.MeterId, readingDateUtc);
-
-                if (hasReading)
-                {
-                    return ServiceResult<BatchMeterReadingResponseDto>.Fail(
-                        $"Reading for meter {meter.Name} already exists for date {readingDto.ReadingDate:yyyy-MM-dd}");
-                }
-
                 // Get previous reading
                 var previousReading = await _unitOfWork.MeterReadings.GetLatestByMeterIdAsync(readingDto.MeterId);
                 var previousValue = previousReading?.ReadingValue ?? meter.InitialReading ?? 0;

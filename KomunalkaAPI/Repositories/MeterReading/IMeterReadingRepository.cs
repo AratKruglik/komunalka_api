@@ -7,5 +7,4 @@ public interface IMeterReadingRepository : IRepository<Models.MeterReading>
     Task<Models.MeterReading?> GetLatestByMeterIdAsync(int meterId);
     Task<IEnumerable<Models.MeterReading>> GetByDateRangeAsync(int meterId, DateTime from, DateTime to);
     Task<IEnumerable<Models.MeterReading>> GetByAddressAndDateRangeAsync(int addressId, DateTime from, DateTime to);
-    Task<bool> HasReadingOnDateAsync(int meterId, DateTime date);
 }
