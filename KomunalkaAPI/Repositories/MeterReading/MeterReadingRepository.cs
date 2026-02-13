@@ -15,6 +15,7 @@ public class MeterReadingRepository : Repository<Models.MeterReading>, IMeterRea
             .Include(mr => mr.Meter)
                 .ThenInclude(m => m.UtilityType)
             .Include(mr => mr.Photos)
+            .Include(mr => mr.Tariff)
             .OrderByDescending(mr => mr.ReadingDate)
             .ToListAsync();
     }
@@ -26,6 +27,7 @@ public class MeterReadingRepository : Repository<Models.MeterReading>, IMeterRea
             .Include(mr => mr.Meter)
                 .ThenInclude(m => m.UtilityType)
             .Include(mr => mr.Photos)
+            .Include(mr => mr.Tariff)
             .OrderByDescending(mr => mr.ReadingDate)
             .ToListAsync();
     }
@@ -37,6 +39,7 @@ public class MeterReadingRepository : Repository<Models.MeterReading>, IMeterRea
             .Include(mr => mr.Meter)
                 .ThenInclude(m => m.UtilityType)
             .Include(mr => mr.Photos)
+            .Include(mr => mr.Tariff)
             .OrderByDescending(mr => mr.ReadingDate)
             .FirstOrDefaultAsync();
     }
@@ -48,6 +51,7 @@ public class MeterReadingRepository : Repository<Models.MeterReading>, IMeterRea
             .Include(mr => mr.Meter)
                 .ThenInclude(m => m.UtilityType)
             .Include(mr => mr.Photos)
+            .Include(mr => mr.Tariff)
             .OrderByDescending(mr => mr.ReadingDate)
             .ToListAsync();
     }
@@ -59,6 +63,7 @@ public class MeterReadingRepository : Repository<Models.MeterReading>, IMeterRea
             .Include(mr => mr.Meter)
                 .ThenInclude(m => m.UtilityType)
             .Include(mr => mr.Photos)
+            .Include(mr => mr.Tariff)
             .OrderByDescending(mr => mr.ReadingDate)
             .ToListAsync();
     }

@@ -98,7 +98,14 @@ public class MeterReadingService : IMeterReadingService
                 // Calculate consumption
                 var consumption = readingDto.ReadingValue - previousValue;
 
-                // Create meter reading
+                int? effectiveTariffId = readingDto.TariffId;
+                if (effectiveTariffId == null)
+                {
+                    var resolvedTariff = await _tariffCalculationService.GetEffectiveTariffAsync(
+                        meter.Id, readingDateUtc);
+                    effectiveTariffId = resolvedTariff?.Id;
+                }
+
                 var meterReading = new Models.MeterReading
                 {
                     MeterId = readingDto.MeterId,
@@ -108,14 +115,14 @@ public class MeterReadingService : IMeterReadingService
                     Consumption = consumption,
                     Notes = readingDto.Notes,
                     IsEstimated = readingDto.IsEstimated,
-                    TariffId = readingDto.TariffId,
+                    TariffId = effectiveTariffId,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
 
                 await _unitOfWork.MeterReadings.AddAsync(meterReading);
                 createdReadings.Add(meterReading);
-                calculationsData.Add((meter, consumption, readingDateUtc, readingDto.TariffId));
+                calculationsData.Add((meter, consumption, readingDateUtc, effectiveTariffId));
             }
 
             // Save all readings in single transaction
@@ -262,6 +269,8 @@ public class MeterReadingService : IMeterReadingService
             Consumption = r.Consumption,
             Notes = r.Notes,
             IsEstimated = r.IsEstimated,
+            TariffId = r.TariffId,
+            TariffName = r.Tariff?.Name,
             CreatedAt = r.CreatedAt,
             UpdatedAt = r.UpdatedAt,
             MeterName = r.Meter?.Name,
@@ -289,6 +298,7 @@ public class MeterReadingService : IMeterReadingService
             .Include(r => r.Meter)
                 .ThenInclude(m => m.Address)
             .Include(r => r.Photos)
+            .Include(r => r.Tariff)
             .FirstOrDefaultAsync(r => r.Id == readingId);
 
         if (reading == null)
@@ -316,6 +326,8 @@ public class MeterReadingService : IMeterReadingService
             Consumption = reading.Consumption,
             Notes = reading.Notes,
             IsEstimated = reading.IsEstimated,
+            TariffId = reading.TariffId,
+            TariffName = reading.Tariff?.Name,
             CreatedAt = reading.CreatedAt,
             UpdatedAt = reading.UpdatedAt,
             MeterName = reading.Meter?.Name,
