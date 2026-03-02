@@ -46,7 +46,7 @@ jobs:
 
     - name: Upload vulnerability report
       if: steps.vuln_check.outputs.vulnerabilities == 'true'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: vulnerability-report
         path: vulnerability-report.txt
